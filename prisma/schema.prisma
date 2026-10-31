@@ -1,0 +1,508 @@
+// This is your Prisma schema file for FaithVerse
+// Compatible with both SQLite (local embedded dev) and PostgreSQL / Supabase
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// User & Identity
+model User {
+  id               String            @id @default(uuid())
+  email            String            @unique
+  passwordHash     String?
+  username         String            @unique
+  fullName         String
+  role             String            @default("USER") // GUEST, USER, MODERATOR, ADMIN, SUPER_ADMIN
+  isVerified       Boolean           @default(false)
+  isSuspended      Boolean           @default(false)
+  avatarUrl        String?
+  bannerUrl        String?
+  bio              String?
+  location         String?
+  website          String?
+  religion         String?           @default("Open / Explorer") // FaithVerse is open to all
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+
+  // Profile Settings
+  settings         UserSettings?
+
+  // Social & Posts
+  posts            Post[]
+  comments         Comment[]
+  commentReplies   CommentReply[]
+  likes            Like[]
+  savedPosts       SavedPost[]
+  following        Follow[]          @relation("UserFollowing")
+  followers        Follow[]          @relation("UserFollowers")
+  blockedUsers     UserBlock[]       @relation("UserBlocks")
+  blockedBy        UserBlock[]       @relation("BlockedByUsers")
+
+  // Media
+  stories          Story[]
+  videos           Video[]
+  channels         Channel[]
+  subscriptions    Subscription[]
+
+  // Moderation
+  moderationReviews   ModerationReview[]
+  moderationAuditLogs ModerationAuditLog[]
+  reportsFiled        Report[]          @relation("ReportsFiled")
+  reportsAgainst      Report[]          @relation("ReportsAgainst")
+
+  // Messaging
+  conversations    ConversationMember[]
+  messagesSent     Message[]
+
+  // Faith Features
+  prayerRequests   PrayerRequest[]
+  prayerActions    PrayerInteraction[]
+  bibleBookmarks   BibleBookmark[]
+  readingProgress  BibleReadingProgress[]
+  churchMemberships ChurchMember[]
+  eventRegistrations EventRegistration[]
+  notifications    Notification[]
+}
+
+model UserSettings {
+  id                   String   @id @default(uuid())
+  userId               String   @unique
+  user                 User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  isPrivate            Boolean  @default(false)
+  allowDirectMessages  Boolean  @default(true)
+  preferredLanguage    String   @default("en") // en, kn (Kannada), hi (Hindi)
+  emailNotifications   Boolean  @default(true)
+  dailyVerseAlert      Boolean  @default(true)
+  prayerAlerts         Boolean  @default(true)
+  theme                String   @default("dark") // dark, light, system
+}
+
+// Post & Moderation Workflow
+// Post moderation statuses: DRAFT, PENDING, UNDER_REVIEW, APPROVED, REJECTED, NEEDS_CHANGES, REMOVED
+model Post {
+  id               String            @id @default(uuid())
+  authorId         String
+  author           User              @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  content          String
+  postType         String            @default("TEXT_PHOTO") // TEXT, PHOTO, CAROUSEL, VIDEO, TESTIMONY
+  category         String            @default("FAITH_GROWTH") // BIBLE_TEACHING, WORSHIP_MUSIC, TESTIMONY, PRAYER, INSPIRATION, EDUCATION, COMMUNITY
+  moderationStatus String            @default("PENDING") // DRAFT, PENDING, UNDER_REVIEW, APPROVED, REJECTED, NEEDS_CHANGES, REMOVED
+  rejectionReason  String?
+  needsChangesNote String?
+  publishedAt      DateTime?
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+
+  // Media & Relations
+  media            PostMedia[]
+  likes            Like[]
+  comments         Comment[]
+  savedBy          SavedPost[]
+  postHashtags     PostHashtag[]
+  reports          Report[]
+  moderationReviews ModerationReview[]
+}
+
+model PostMedia {
+  id               String   @id @default(uuid())
+  postId           String
+  post             Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  url              String
+  mediaType        String   @default("IMAGE") // IMAGE, VIDEO
+  aspectRatio      String   @default("1:1") // 1:1, 4:5, 16:9, 9:16
+  orderIndex       Int      @default(0)
+  altText          String?
+}
+
+model Hashtag {
+  id               String        @id @default(uuid())
+  tag              String        @unique
+  postCount        Int           @default(0)
+  postHashtags     PostHashtag[]
+}
+
+model PostHashtag {
+  id               String   @id @default(uuid())
+  postId           String
+  hashtagId        String
+  post             Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  hashtag          Hashtag  @relation(fields: [hashtagId], references: [id], onDelete: Cascade)
+
+  @@unique([postId, hashtagId])
+}
+
+model Like {
+  id               String   @id @default(uuid())
+  userId           String
+  postId           String
+  createdAt        DateTime @default(now())
+
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  post             Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, postId])
+}
+
+model Comment {
+  id               String         @id @default(uuid())
+  postId           String
+  userId           String
+  content          String
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+
+  post             Post           @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user             User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  replies          CommentReply[]
+}
+
+model CommentReply {
+  id               String   @id @default(uuid())
+  commentId        String
+  userId           String
+  content          String
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  comment          Comment  @relation(fields: [commentId], references: [id], onDelete: Cascade)
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model SavedPost {
+  id               String   @id @default(uuid())
+  userId           String
+  postId           String
+  createdAt        DateTime @default(now())
+
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  post             Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, postId])
+}
+
+model Follow {
+  id               String   @id @default(uuid())
+  followerId       String
+  followingId      String
+  createdAt        DateTime @default(now())
+
+  follower         User     @relation("UserFollowing", fields: [followerId], references: [id], onDelete: Cascade)
+  following        User     @relation("UserFollowers", fields: [followingId], references: [id], onDelete: Cascade)
+
+  @@unique([followerId, followingId])
+}
+
+model UserBlock {
+  id               String   @id @default(uuid())
+  blockerId        String
+  blockedId        String
+  createdAt        DateTime @default(now())
+
+  blocker          User     @relation("UserBlocks", fields: [blockerId], references: [id], onDelete: Cascade)
+  blocked          User     @relation("BlockedByUsers", fields: [blockedId], references: [id], onDelete: Cascade)
+
+  @@unique([blockerId, blockedId])
+}
+
+// Short Videos (Reels) and Long Videos
+model Video {
+  id               String   @id @default(uuid())
+  authorId         String
+  author           User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  channelId        String?
+  channel          Channel? @relation(fields: [channelId], references: [id], onDelete: SetNull)
+  title            String
+  description      String?
+  videoUrl         String
+  thumbnailUrl     String?
+  videoType        String   @default("REEL") // REEL, LONG_VIDEO, SERMON, WORSHIP
+  durationSeconds  Int      @default(30)
+  viewCount        Int      @default(0)
+  likesCount       Int      @default(0)
+  moderationStatus String   @default("PENDING") // PENDING, APPROVED, REJECTED
+  rejectionReason  String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+}
+
+model Channel {
+  id               String         @id @default(uuid())
+  ownerId          String
+  owner            User           @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  name             String
+  handle           String         @unique
+  description      String?
+  avatarUrl        String?
+  bannerUrl        String?
+  isVerified       Boolean        @default(false)
+  createdAt        DateTime       @default(now())
+  videos           Video[]
+  subscriptions    Subscription[]
+}
+
+model Subscription {
+  id               String   @id @default(uuid())
+  userId           String
+  channelId        String
+  createdAt        DateTime @default(now())
+
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  channel          Channel  @relation(fields: [channelId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, channelId])
+}
+
+// 24-Hour Stories
+model Story {
+  id               String   @id @default(uuid())
+  userId           String
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  mediaUrl         String
+  mediaType        String   @default("IMAGE") // IMAGE, VIDEO
+  caption          String?
+  moderationStatus String   @default("PENDING") // PENDING, APPROVED, REJECTED
+  expiresAt        DateTime
+  createdAt        DateTime @default(now())
+}
+
+// Direct & Group Messaging
+model Conversation {
+  id               String               @id @default(uuid())
+  isGroup          Boolean              @default(false)
+  groupName        String?
+  groupAvatar      String?
+  createdAt        DateTime             @default(now())
+  updatedAt        DateTime             @updatedAt
+  members          ConversationMember[]
+  messages         Message[]
+}
+
+model ConversationMember {
+  id               String       @id @default(uuid())
+  conversationId   String
+  userId           String
+  joinedAt         DateTime     @default(now())
+  lastReadAt       DateTime     @default(now())
+
+  conversation     Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  user             User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([conversationId, userId])
+}
+
+model Message {
+  id               String       @id @default(uuid())
+  conversationId   String
+  senderId         String
+  content          String
+  attachmentUrl    String?
+  attachmentType   String?      // IMAGE, VOICE_NOTE, DOCUMENT
+  isRead           Boolean      @default(false)
+  createdAt        DateTime     @default(now())
+
+  conversation     Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  sender           User         @relation(fields: [senderId], references: [id], onDelete: Cascade)
+}
+
+// Moderation & Audit System
+model ModerationReview {
+  id               String   @id @default(uuid())
+  postId           String
+  reviewerId       String
+  action           String   // APPROVE, REJECT, REQUEST_CHANGES, REMOVE
+  reason           String?
+  internalNotes    String?
+  createdAt        DateTime @default(now())
+
+  post             Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  reviewer         User     @relation(fields: [reviewerId], references: [id], onDelete: Cascade)
+}
+
+model ModerationAuditLog {
+  id               String   @id @default(uuid())
+  adminId          String
+  admin            User     @relation(fields: [adminId], references: [id], onDelete: Cascade)
+  action           String
+  targetEntity     String   // POST, VIDEO, STORY, USER, COMMENT
+  targetId         String
+  details          String?
+  createdAt        DateTime @default(now())
+}
+
+model Report {
+  id               String   @id @default(uuid())
+  reporterId       String
+  reporter         User     @relation("ReportsFiled", fields: [reporterId], references: [id], onDelete: Cascade)
+  targetUserId     String?
+  targetUser       User?    @relation("ReportsAgainst", fields: [targetUserId], references: [id], onDelete: SetNull)
+  postId           String?
+  post             Post?    @relation(fields: [postId], references: [id], onDelete: Cascade)
+  reason           String
+  details          String?
+  status           String   @default("OPEN") // OPEN, RESOLVED, DISMISSED
+  createdAt        DateTime @default(now())
+}
+
+// Faith Modules: Daily Verse, Prayer Wall, Bible Reader, Churches, Events
+model DailyVerse {
+  id               String   @id @default(uuid())
+  dateString       String   @unique // e.g., "2026-10-31"
+  book             String
+  chapter          Int
+  verse            Int
+  textEnglish      String
+  textKannada      String
+  textHindi        String
+  explanation      String
+  theme            String   @default("Hope & Peace")
+  createdAt        DateTime @default(now())
+}
+
+model PrayerRequest {
+  id               String              @id @default(uuid())
+  authorId         String
+  author           User                @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  title            String
+  description      String
+  isAnonymous      Boolean             @default(false)
+  isPrivate        Boolean             @default(false)
+  isAnswered       Boolean             @default(false)
+  answeredNotes    String?
+  prayerCount      Int                 @default(0)
+  moderationStatus String              @default("APPROVED") // Prayer requests can be moderated or auto-approved
+  createdAt        DateTime            @default(now())
+  updatedAt        DateTime            @updatedAt
+
+  interactions     PrayerInteraction[]
+}
+
+model PrayerInteraction {
+  id               String        @id @default(uuid())
+  prayerRequestId  String
+  userId           String
+  createdAt        DateTime      @default(now())
+
+  prayerRequest    PrayerRequest @relation(fields: [prayerRequestId], references: [id], onDelete: Cascade)
+  user             User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([prayerRequestId, userId])
+}
+
+model BibleBookmark {
+  id               String   @id @default(uuid())
+  userId           String
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  book             String
+  chapter          Int
+  verse            Int
+  note             String?
+  createdAt        DateTime @default(now())
+}
+
+model BibleReadingProgress {
+  id               String   @id @default(uuid())
+  userId           String
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  planName         String
+  currentDay       Int      @default(1)
+  completedDays    Int      @default(0)
+  totalDays        Int      @default(30)
+  updatedAt        DateTime @updatedAt
+}
+
+model Church {
+  id               String         @id @default(uuid())
+  name             String
+  denomination     String?
+  description      String
+  address          String
+  city             String
+  country          String
+  phone            String?
+  email            String?
+  website          String?
+  liveStreamUrl    String?
+  serviceTimes     String         // e.g. "Sunday: 8:00 AM, 10:30 AM; Wednesday: 7:00 PM"
+  isVerified       Boolean        @default(false)
+  avatarUrl        String?
+  bannerUrl        String?
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+
+  members          ChurchMember[]
+  events           Event[]
+}
+
+model ChurchMember {
+  id               String   @id @default(uuid())
+  churchId         String
+  userId           String
+  role             String   @default("MEMBER") // PASTOR, ADMIN, MEMBER
+  joinedAt         DateTime @default(now())
+
+  church           Church   @relation(fields: [churchId], references: [id], onDelete: Cascade)
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([churchId, userId])
+}
+
+model Event {
+  id               String              @id @default(uuid())
+  churchId         String?
+  church           Church?             @relation(fields: [churchId], references: [id], onDelete: SetNull)
+  title            String
+  description      String
+  category         String              @default("WORSHIP_NIGHT") // GOSPEL_MEETING, WORSHIP_NIGHT, CONFERENCE, YOUTH_CAMP, CHARITY
+  location         String
+  isOnline         Boolean             @default(false)
+  streamUrl        String?
+  startDate        DateTime
+  endDate          DateTime
+  bannerUrl        String?
+  createdAt        DateTime            @default(now())
+
+  registrations    EventRegistration[]
+}
+
+model EventRegistration {
+  id               String   @id @default(uuid())
+  eventId          String
+  userId           String
+  registeredAt     DateTime @default(now())
+
+  event            Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([eventId, userId])
+}
+
+model AudioTrack {
+  id               String   @id @default(uuid())
+  title            String
+  artist           String
+  album            String?
+  category         String   @default("WORSHIP") // WORSHIP, SERMON_PODCAST, GOSPEL_SONG, INSTRUMENTAL
+  durationSeconds  Int      @default(240)
+  audioUrl         String
+  coverArtUrl      String?
+  lyrics           String?
+  playsCount       Int      @default(0)
+  createdAt        DateTime @default(now())
+}
+
+model Notification {
+  id               String   @id @default(uuid())
+  userId           String
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title            String
+  message          String
+  type             String   // POST_APPROVED, POST_REJECTED, LIKE, COMMENT, PRAYER, FOLLOW, SYSTEM
+  actionUrl        String?
+  isRead           Boolean  @default(false)
+  createdAt        DateTime @default(now())
+}
