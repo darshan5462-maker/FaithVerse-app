@@ -9,7 +9,10 @@ export interface CurrentUser {
   fullName: string;
   role: "GUEST" | "USER" | "MODERATOR" | "ADMIN" | "SUPER_ADMIN";
   avatarUrl: string;
+  bannerUrl?: string;
   bio?: string;
+  location?: string;
+  religion?: string;
   isVerified?: boolean;
 }
 
@@ -83,6 +86,7 @@ interface AuthContextType {
   registerAccount: (payload: RegisterPayload) => Promise<{ success: boolean; error?: string }>;
   logout: () => void;
   switchUser: (targetUsername: string) => void;
+  updateUserProfile: (updatedFields: Partial<CurrentUser>) => void;
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -94,6 +98,7 @@ const AuthContext = createContext<AuthContextType>({
   registerAccount: async () => ({ success: false }),
   logout: () => {},
   switchUser: () => {},
+  updateUserProfile: () => {},
 });
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
@@ -168,6 +173,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const updateUserProfile = (updatedFields: Partial<CurrentUser>) => {
+    if (!user) return;
+    const merged = { ...user, ...updatedFields };
+    setUser(merged);
+    localStorage.setItem("faithverse_active_user", JSON.stringify(merged));
+  };
+
   const logout = () => {
     setUser(null);
     localStorage.removeItem("faithverse_active_user");
@@ -187,6 +199,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         registerAccount,
         logout,
         switchUser,
+        updateUserProfile,
       }}
     >
       {children}
