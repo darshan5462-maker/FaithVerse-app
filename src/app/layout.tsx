@@ -9,6 +9,17 @@ export const metadata: Metadata = {
   title: "FaithVerse — Scroll with Purpose. Share with Love. Grow Together.",
   description:
     "A global, uplifting social platform open to everyone. Discover Bible teachings, worship music, testimonies, and purposeful community conversations.",
+  manifest: "/manifest.json",
+  icons: {
+    icon: "/icon.png",
+    shortcut: "/icon-192.png",
+    apple: "/apple-touch-icon.png",
+  },
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "FaithVerse",
+  },
 };
 
 export default function RootLayout({

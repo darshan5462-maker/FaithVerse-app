@@ -117,11 +117,18 @@ export async function POST(request: Request) {
     // Set 24 hour expiration from right now
     const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
 
+    const detectedMediaType =
+      mediaType === "VIDEO" ||
+      mediaUrl.startsWith("data:video") ||
+      Boolean(mediaUrl.match(/\.(mp4|webm|mov|ogg)($|\?)/i))
+        ? "VIDEO"
+        : "IMAGE";
+
     const story = await prisma.story.create({
       data: {
         userId: user.id,
         mediaUrl,
-        mediaType: mediaType || "IMAGE",
+        mediaType: detectedMediaType,
         caption: caption ? caption.trim() : null,
         moderationStatus: "APPROVED", // Stories expire in 24 hours
         expiresAt,
