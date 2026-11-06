@@ -13,6 +13,7 @@ export interface CurrentUser {
   bio?: string;
   location?: string;
   religion?: string;
+  website?: string;
   isVerified?: boolean;
 }
 

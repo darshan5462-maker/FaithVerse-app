@@ -152,12 +152,20 @@ export async function POST(request: Request) {
         moderationStatus: "PENDING", // Strict admin approval required
         media: mediaUrls && mediaUrls.length > 0
           ? {
-              create: mediaUrls.map((url: string, index: number) => ({
-                url,
-                orderIndex: index,
-                mediaType: "IMAGE",
-                aspectRatio: "16:9",
-              })),
+              create: mediaUrls.map((url: string, index: number) => {
+                const isVideo =
+                  postType === "VIDEO" ||
+                  postType === "SERMON" ||
+                  postType === "REEL" ||
+                  url.startsWith("data:video") ||
+                  Boolean(url.match(/\.(mp4|webm|mov|ogg|m4v)($|\?)/i));
+                return {
+                  url,
+                  orderIndex: index,
+                  mediaType: isVideo ? "VIDEO" : "IMAGE",
+                  aspectRatio: isVideo ? "16:9" : "1:1",
+                };
+              }),
             }
           : undefined,
       },

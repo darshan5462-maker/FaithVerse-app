@@ -17,12 +17,15 @@ export default function CreatePostWidget({ onPostCreated }: CreatePostWidgetProp
   const [content, setContent] = useState("");
   const [category, setCategory] = useState("FAITH_GROWTH");
   const [mediaPreview, setMediaPreview] = useState<string | null>(null);
+  const [isVideo, setIsVideo] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [submittedMessage, setSubmittedMessage] = useState(false);
 
   const handleDeviceFile = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      const isVid = file.type.startsWith("video") || Boolean(file.name.match(/\.(mp4|mov|webm)$/i));
+      setIsVideo(isVid);
       const reader = new FileReader();
       reader.onload = (event) => {
         setMediaPreview(event.target?.result as string);
@@ -44,6 +47,7 @@ export default function CreatePostWidget({ onPostCreated }: CreatePostWidgetProp
           authorId: user.id,
           content: content.trim(),
           category,
+          postType: isVideo ? "VIDEO" : "PHOTO",
           mediaUrls: mediaPreview ? [mediaPreview] : [],
         }),
       });
@@ -104,12 +108,24 @@ export default function CreatePostWidget({ onPostCreated }: CreatePostWidgetProp
 
         {/* Selected Media Preview */}
         {mediaPreview && (
-          <div className="relative rounded-xl overflow-hidden max-h-48 bg-black/40 border border-white/[0.08] inline-block animate-fade-in">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={mediaPreview} alt="Preview" className="h-44 w-auto object-cover rounded-xl" />
+          <div className="relative rounded-xl overflow-hidden max-h-48 bg-black/60 border border-white/[0.08] inline-block animate-fade-in">
+            {isVideo ? (
+              <video
+                src={mediaPreview}
+                controls
+                playsInline
+                className="h-44 w-auto rounded-xl object-contain bg-black"
+              />
+            ) : (
+              /* eslint-disable-next-line @next/next/no-img-element */
+              <img src={mediaPreview} alt="Preview" className="h-44 w-auto object-cover rounded-xl" />
+            )}
             <button
               type="button"
-              onClick={() => setMediaPreview(null)}
+              onClick={() => {
+                setMediaPreview(null);
+                setIsVideo(false);
+              }}
               className="absolute top-2 right-2 p-1 rounded-full bg-black/70 hover:bg-black text-white transition-colors"
             >
               <X className="w-3.5 h-3.5" />
@@ -143,12 +159,12 @@ export default function CreatePostWidget({ onPostCreated }: CreatePostWidgetProp
               }`}
             >
               <ImageIcon className="w-3.5 h-3.5" />
-              <span>{mediaPreview ? "Photo Added" : "Add Photo"}</span>
+              <span>{mediaPreview ? (isVideo ? "Video Clip Added" : "Photo Added") : "Add Photo / Video"}</span>
             </button>
             <input
               ref={fileInputRef}
               type="file"
-              accept="image/*"
+              accept="image/*,video/*"
               onChange={handleDeviceFile}
               className="hidden"
             />

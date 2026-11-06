@@ -194,14 +194,27 @@ export default function PostCard({ post, onPostUpdated }: PostCardProps) {
 
       {/* Media Attachments */}
       {post.media && post.media.length > 0 && (
-        <div className="relative w-full max-h-[460px] bg-black/30 overflow-hidden flex items-center justify-center border-y border-white/[0.06]">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={post.media[0].url}
-            alt={post.media[0].altText || "Post image"}
-            className="w-full max-h-[460px] object-cover"
-            loading="lazy"
-          />
+        <div className="relative w-full max-h-[500px] bg-black/60 overflow-hidden flex items-center justify-center border-y border-white/[0.06]">
+          {post.media[0].mediaType === "VIDEO" ||
+          post.postType === "VIDEO" ||
+          post.media[0].url.startsWith("data:video") ||
+          Boolean(post.media[0].url.match(/\.(mp4|webm|mov|ogg|m4v)($|\?)/i)) ? (
+            <video
+              src={post.media[0].url}
+              controls
+              playsInline
+              preload="metadata"
+              className="w-full max-h-[500px] object-contain bg-black"
+            />
+          ) : (
+            /* eslint-disable-next-line @next/next/no-img-element */
+            <img
+              src={post.media[0].url}
+              alt={post.media[0].altText || "Post image"}
+              className="w-full max-h-[460px] object-cover"
+              loading="lazy"
+            />
+          )}
         </div>
       )}
 

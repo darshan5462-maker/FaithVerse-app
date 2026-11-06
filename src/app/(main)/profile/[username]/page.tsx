@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import {
   User,
   CheckCircle2,
@@ -22,6 +22,17 @@ import {
   Heart,
   Share2,
   BookOpen,
+  LogOut,
+  Settings,
+  Lock,
+  Bell,
+  ShieldCheck,
+  Languages,
+  Sliders,
+  Mail,
+  Link as LinkIcon,
+  Eye,
+  AlertTriangle,
 } from "lucide-react";
 import PostCard from "@/components/feed/PostCard";
 import { useAuth } from "@/components/providers/AuthContext";
@@ -76,28 +87,52 @@ const PRESET_BANNERS = [
 ];
 
 export default function UserProfilePage() {
+  const router = useRouter();
   const params = useParams();
   const username = params.username as string;
-  const { user: currentUser, updateUserProfile } = useAuth();
+  const { user: currentUser, updateUserProfile, logout } = useAuth();
 
   const [profileData, setProfileData] = useState<any>(null);
   const [activeTab, setActiveTab] = useState<"approved" | "pending" | "saved">("approved");
   const [profilePosts, setProfilePosts] = useState<any[]>([]);
   const [pendingPosts, setPendingPosts] = useState<any[]>([]);
   const [isFollowing, setIsFollowing] = useState(false);
+  const [followersCount, setFollowersCount] = useState<number>(0);
   const [loading, setLoading] = useState(true);
 
-  // Edit Profile Modal States
+  // Edit Profile & Settings Modal States
   const [isEditOpen, setIsEditOpen] = useState(false);
+  const [settingsActiveTab, setSettingsActiveTab] = useState<
+    "profile" | "media" | "privacy" | "notifications" | "security"
+  >("profile");
   const [editFullName, setEditFullName] = useState("");
   const [editBio, setEditBio] = useState("");
   const [editLocation, setEditLocation] = useState("");
   const [editReligion, setEditReligion] = useState("Christian");
+  const [editWebsite, setEditWebsite] = useState("");
+  const [editEmail, setEditEmail] = useState("");
   const [editAvatarUrl, setEditAvatarUrl] = useState("");
   const [editBannerUrl, setEditBannerUrl] = useState("");
+
+  // Account Settings state
+  const [isPrivate, setIsPrivate] = useState(false);
+  const [allowDMs, setAllowDMs] = useState(true);
+  const [prefLanguage, setPrefLanguage] = useState("en");
+  const [emailAlerts, setEmailAlerts] = useState(true);
+  const [dailyVerseAlert, setDailyVerseAlert] = useState(true);
+  const [prayerAlerts, setPrayerAlerts] = useState(true);
+
+  // Password fields
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+
+  // Saving states
   const [saving, setSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
+
+  // Logout confirmation modal
+  const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
 
   const avatarInputRef = useRef<HTMLInputElement>(null);
   const bannerInputRef = useRef<HTMLInputElement>(null);
@@ -107,10 +142,24 @@ export default function UserProfilePage() {
 
   const fetchProfileDetails = async () => {
     try {
-      const res = await fetch(`/api/profile?username=${username}`);
+      const url = currentUser
+        ? `/api/profile?username=${username}&currentUserId=${currentUser.id}`
+        : `/api/profile?username=${username}`;
+      const res = await fetch(url);
       const data = await res.json();
       if (data.success && data.profile) {
         setProfileData(data.profile);
+        setIsFollowing(Boolean(data.profile.isFollowing));
+        setFollowersCount(data.profile._count?.followers ?? 0);
+
+        if (data.profile.settings) {
+          setIsPrivate(Boolean(data.profile.settings.isPrivate));
+          setAllowDMs(Boolean(data.profile.settings.allowDirectMessages));
+          setPrefLanguage(data.profile.settings.preferredLanguage || "en");
+          setEmailAlerts(Boolean(data.profile.settings.emailNotifications));
+          setDailyVerseAlert(Boolean(data.profile.settings.dailyVerseAlert));
+          setPrayerAlerts(Boolean(data.profile.settings.prayerAlerts));
+        }
       }
     } catch (err) {
       console.error("Error loading profile:", err);
@@ -141,14 +190,61 @@ export default function UserProfilePage() {
     }
   }, [username, isOwnProfile]);
 
+  // Handle follow toggle
+  const handleFollowToggle = async () => {
+    if (!currentUser) {
+      alert("Please log in to follow creators and community members.");
+      return;
+    }
+
+    if (!profileData?.id) return;
+
+    const prevFollowing = isFollowing;
+    const prevCount = followersCount;
+
+    setIsFollowing(!prevFollowing);
+    setFollowersCount((cnt) => (prevFollowing ? Math.max(0, cnt - 1) : cnt + 1));
+
+    try {
+      const res = await fetch("/api/users/follow", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          followerId: currentUser.id,
+          followingId: profileData.id,
+          action: "TOGGLE",
+        }),
+      });
+
+      const data = await res.json();
+      if (data.success) {
+        setIsFollowing(data.isFollowing);
+        setFollowersCount(data.followersCount);
+      } else {
+        // revert on error
+        setIsFollowing(prevFollowing);
+        setFollowersCount(prevCount);
+      }
+    } catch (err) {
+      console.error("Follow error:", err);
+      setIsFollowing(prevFollowing);
+      setFollowersCount(prevCount);
+    }
+  };
+
   // Initialize edit fields when opening modal
-  const handleOpenEdit = () => {
+  const handleOpenEdit = (tab: "profile" | "media" | "privacy" | "notifications" | "security" = "profile") => {
+    setSettingsActiveTab(tab);
     setEditFullName(profileData?.fullName || currentUser?.fullName || "");
     setEditBio(profileData?.bio || currentUser?.bio || "");
     setEditLocation(profileData?.location || currentUser?.location || "Global Sanctuary");
     setEditReligion(profileData?.religion || currentUser?.religion || "Christian");
+    setEditWebsite(profileData?.website || "");
+    setEditEmail(profileData?.email || currentUser?.email || "");
     setEditAvatarUrl(profileData?.avatarUrl || currentUser?.avatarUrl || "");
     setEditBannerUrl(profileData?.bannerUrl || currentUser?.bannerUrl || "");
+    setNewPassword("");
+    setConfirmPassword("");
     setErrorMsg("");
     setSaveSuccess(false);
     setIsEditOpen(true);
@@ -158,8 +254,8 @@ export default function UserProfilePage() {
   const handleAvatarFile = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      if (file.size > 5 * 1024 * 1024) {
-        setErrorMsg("Photo must be under 5MB.");
+      if (file.size > 8 * 1024 * 1024) {
+        setErrorMsg("Photo must be under 8MB.");
         return;
       }
       const reader = new FileReader();
@@ -174,8 +270,8 @@ export default function UserProfilePage() {
   const handleBannerFile = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      if (file.size > 8 * 1024 * 1024) {
-        setErrorMsg("Banner photo must be under 8MB.");
+      if (file.size > 12 * 1024 * 1024) {
+        setErrorMsg("Banner photo must be under 12MB.");
         return;
       }
       const reader = new FileReader();
@@ -186,10 +282,15 @@ export default function UserProfilePage() {
     }
   };
 
-  // Save profile changes to Supabase
+  // Save profile & account settings to Supabase
   const handleSaveProfile = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!currentUser) return;
+
+    if (newPassword && newPassword !== confirmPassword) {
+      setErrorMsg("New passwords do not match.");
+      return;
+    }
 
     setSaving(true);
     setErrorMsg("");
@@ -205,8 +306,18 @@ export default function UserProfilePage() {
           bio: editBio.trim(),
           location: editLocation.trim(),
           religion: editReligion.trim(),
+          website: editWebsite.trim(),
+          email: editEmail.trim(),
           avatarUrl: editAvatarUrl,
           bannerUrl: editBannerUrl,
+          settings: {
+            isPrivate,
+            allowDirectMessages: allowDMs,
+            preferredLanguage: prefLanguage,
+            emailNotifications: emailAlerts,
+            dailyVerseAlert,
+            prayerAlerts,
+          },
         }),
       });
 
@@ -226,6 +337,7 @@ export default function UserProfilePage() {
           bio: data.user.bio,
           location: data.user.location,
           religion: data.user.religion,
+          email: data.user.email,
         });
 
         setSaveSuccess(true);
@@ -242,6 +354,13 @@ export default function UserProfilePage() {
     } finally {
       setSaving(false);
     }
+  };
+
+  // Confirm and perform logout
+  const handleConfirmLogout = () => {
+    setIsLogoutModalOpen(false);
+    logout();
+    router.push("/login");
   };
 
   // Current display values with fallbacks
@@ -275,12 +394,13 @@ export default function UserProfilePage() {
   const displayRole =
     profileData?.role || (isOwnProfile && currentUser?.role) || "USER";
 
+  const displayWebsite = profileData?.website || currentUser?.website;
+
   const postCount = profileData?._count?.posts ?? profilePosts.length;
-  const followerCount = profileData?._count?.followers ?? 1420;
   const prayerCount = profileData?._count?.prayerActions ?? 382;
 
   return (
-    <div className="space-y-6 animate-fade-in">
+    <div className="space-y-6 animate-fade-in pb-12">
       {/* Profile Header Card */}
       <div className="bg-[#11141d] border border-white/[0.08] rounded-3xl overflow-hidden shadow-2xl">
         {/* Cover Banner */}
@@ -296,7 +416,7 @@ export default function UserProfilePage() {
           {/* Quick Change Banner Button for Owner */}
           {isOwnProfile && (
             <button
-              onClick={handleOpenEdit}
+              onClick={() => handleOpenEdit("media")}
               className="absolute top-3 right-3 px-3 py-1.5 rounded-xl text-xs font-medium bg-black/60 hover:bg-black/80 backdrop-blur-md text-white border border-white/15 transition-all flex items-center gap-1.5 shadow-md"
             >
               <Camera className="w-3.5 h-3.5" />
@@ -321,7 +441,7 @@ export default function UserProfilePage() {
 
               {isOwnProfile && (
                 <button
-                  onClick={handleOpenEdit}
+                  onClick={() => handleOpenEdit("media")}
                   className="absolute bottom-1 right-1 w-8 h-8 rounded-full bg-[#e5b842] text-black flex items-center justify-center border-2 border-[#11141d] shadow-lg hover:scale-110 active:scale-95 transition-transform"
                   title="Update Profile Picture"
                 >
@@ -330,12 +450,12 @@ export default function UserProfilePage() {
               )}
             </div>
 
-            {/* Actions: Edit Profile or Follow */}
-            <div className="flex items-center gap-2.5">
+            {/* Actions: Edit Profile, Full Settings, and Logout Button (Item 2) */}
+            <div className="flex items-center gap-2 flex-wrap">
               {!isOwnProfile ? (
                 <>
                   <button
-                    onClick={() => setIsFollowing(!isFollowing)}
+                    onClick={handleFollowToggle}
                     className={`py-2 px-5 rounded-xl text-xs font-semibold transition-all shadow-sm ${
                       isFollowing
                         ? "bg-white/[0.08] text-slate-200 border border-white/[0.12] hover:bg-white/[0.12]"
@@ -344,18 +464,55 @@ export default function UserProfilePage() {
                   >
                     {isFollowing ? "Following ✓" : "Follow"}
                   </button>
-                  <button className="p-2 rounded-xl bg-white/[0.05] hover:bg-white/[0.08] text-slate-300 border border-white/[0.08] transition-colors">
+                  <button
+                    onClick={() => {
+                      if (navigator.share) {
+                        navigator.share({
+                          title: `${displayName} on FaithVerse`,
+                          url: window.location.href,
+                        });
+                      } else {
+                        navigator.clipboard.writeText(window.location.href);
+                        alert("Profile link copied to clipboard!");
+                      }
+                    }}
+                    className="p-2 rounded-xl bg-white/[0.05] hover:bg-white/[0.08] text-slate-300 border border-white/[0.08] transition-colors"
+                    title="Share Profile"
+                  >
                     <Share2 className="w-4 h-4" />
                   </button>
                 </>
               ) : (
-                <button
-                  onClick={handleOpenEdit}
-                  className="py-2.5 px-5 rounded-xl text-xs font-semibold bg-white text-black hover:bg-slate-200 active:scale-95 transition-all shadow-md flex items-center gap-2"
-                >
-                  <Edit3 className="w-3.5 h-3.5 stroke-[2.5]" />
-                  <span>Edit Profile</span>
-                </button>
+                <>
+                  {/* Edit Profile Button */}
+                  <button
+                    onClick={() => handleOpenEdit("profile")}
+                    className="py-2.5 px-4 rounded-xl text-xs font-semibold bg-white text-black hover:bg-slate-200 active:scale-95 transition-all shadow-md flex items-center gap-1.5"
+                  >
+                    <Edit3 className="w-3.5 h-3.5 stroke-[2.5]" />
+                    <span>Edit Profile</span>
+                  </button>
+
+                  {/* Account Settings Button */}
+                  <button
+                    onClick={() => handleOpenEdit("privacy")}
+                    className="py-2.5 px-3.5 rounded-xl text-xs font-semibold bg-white/[0.06] hover:bg-white/[0.1] text-slate-200 border border-white/[0.1] active:scale-95 transition-all flex items-center gap-1.5"
+                    title="Account Settings"
+                  >
+                    <Settings className="w-3.5 h-3.5 text-[#e5b842]" />
+                    <span className="hidden sm:inline">Settings</span>
+                  </button>
+
+                  {/* Prominent Log Out Button (as requested in item 2) */}
+                  <button
+                    onClick={() => setIsLogoutModalOpen(true)}
+                    className="py-2.5 px-3.5 rounded-xl text-xs font-semibold bg-rose-500/10 hover:bg-rose-500/20 text-rose-300 border border-rose-500/25 active:scale-95 transition-all flex items-center gap-1.5 shadow-sm"
+                    title="Log Out of FaithVerse"
+                  >
+                    <LogOut className="w-3.5 h-3.5 text-rose-400 stroke-[2.2]" />
+                    <span>Log Out</span>
+                  </button>
+                </>
               )}
             </div>
           </div>
@@ -371,6 +528,12 @@ export default function UserProfilePage() {
                 <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-[#e5b842]/10 text-[#f5d47a] border border-[#e5b842]/30 font-mono uppercase tracking-wider">
                   {displayRole}
                 </span>
+                {isPrivate && (
+                  <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-slate-800 text-slate-300 border border-white/10 flex items-center gap-1">
+                    <Lock className="w-2.5 h-2.5" />
+                    Private
+                  </span>
+                )}
               </div>
               <p className="text-xs text-slate-400 font-medium">@{username}</p>
             </div>
@@ -395,13 +558,26 @@ export default function UserProfilePage() {
                         month: "long",
                         year: "numeric",
                       })
-                    : "October 2026"}
+                    : "November 2026"}
                 </span>
               </div>
               <div className="flex items-center gap-1.5">
                 <Globe className="w-3.5 h-3.5 text-[#e5b842]" />
                 <span className="text-slate-300 font-medium">{displayReligion}</span>
               </div>
+              {displayWebsite && (
+                <div className="flex items-center gap-1.5">
+                  <LinkIcon className="w-3.5 h-3.5 text-blue-400" />
+                  <a
+                    href={displayWebsite.startsWith("http") ? displayWebsite : `https://${displayWebsite}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-blue-400 hover:underline"
+                  >
+                    {displayWebsite.replace(/^https?:\/\//, "")}
+                  </a>
+                </div>
+              )}
             </div>
 
             {/* Stats Row */}
@@ -412,7 +588,7 @@ export default function UserProfilePage() {
               </div>
               <div>
                 <strong className="text-white font-bold text-sm">
-                  {formatNumberCompact(followerCount)}
+                  {formatNumberCompact(followersCount)}
                 </strong>{" "}
                 <span className="text-slate-400">Followers</span>
               </div>
@@ -427,7 +603,7 @@ export default function UserProfilePage() {
         </div>
       </div>
 
-      {/* Tabs */}
+      {/* Profile Post Feed Tabs */}
       <div className="flex items-center gap-2 border-b border-white/[0.08] pb-1 text-xs font-semibold">
         <button
           onClick={() => setActiveTab("approved")}
@@ -468,263 +644,546 @@ export default function UserProfilePage() {
         </button>
       </div>
 
-      {/* Tab Content */}
+      {/* Feed Content */}
       <div className="space-y-4">
-        {activeTab === "pending" ? (
-          pendingPosts.length === 0 ? (
-            <div className="bg-[#11141d] border border-white/[0.08] p-12 text-center rounded-2xl space-y-2">
-              <Shield className="w-8 h-8 text-amber-400 mx-auto opacity-70" />
-              <h3 className="text-sm font-semibold text-white">No Pending Submissions</h3>
-              <p className="text-xs text-slate-400">
-                All your submissions have passed review and are live on the community feed!
+        {loading ? (
+          <div className="p-12 text-center text-xs text-slate-500 flex items-center justify-center gap-2">
+            <Loader2 className="w-4 h-4 animate-spin text-[#e5b842]" />
+            <span>Loading faith reflections...</span>
+          </div>
+        ) : activeTab === "approved" ? (
+          profilePosts.length > 0 ? (
+            profilePosts.map((post) => <PostCard key={post.id} post={post} />)
+          ) : (
+            <div className="bg-[#11141d] border border-white/[0.08] rounded-3xl p-12 text-center space-y-3">
+              <Sparkles className="w-10 h-10 text-[#e5b842] mx-auto opacity-70 animate-pulse" />
+              <h3 className="text-base font-semibold text-white">No Published Posts Yet</h3>
+              <p className="text-xs text-slate-400 max-w-sm mx-auto leading-relaxed">
+                When your posts pass through the moderation approval workflow, they appear here.
               </p>
             </div>
-          ) : (
-            pendingPosts.map((post) => <PostCard key={post.id} post={post} />)
           )
-        ) : profilePosts.length === 0 ? (
-          <div className="bg-[#11141d] border border-white/[0.08] p-12 text-center rounded-2xl space-y-2">
-            <Sparkles className="w-8 h-8 text-[#e5b842] mx-auto opacity-70" />
-            <h3 className="text-sm font-semibold text-white">No Published Posts Yet</h3>
-            <p className="text-xs text-slate-400">
-              When your posts pass through the moderation approval workflow, they appear here.
+        ) : activeTab === "pending" ? (
+          pendingPosts.length > 0 ? (
+            pendingPosts.map((post) => <PostCard key={post.id} post={post} />)
+          ) : (
+            <div className="bg-[#11141d] border border-white/[0.08] rounded-3xl p-12 text-center space-y-3">
+              <Clock className="w-10 h-10 text-amber-400 mx-auto opacity-70" />
+              <h3 className="text-base font-semibold text-white">Queue is Clear</h3>
+              <p className="text-xs text-slate-400 max-w-sm mx-auto leading-relaxed">
+                You have no posts waiting in the moderation review queue.
+              </p>
+            </div>
+          )
+        ) : (
+          <div className="bg-[#11141d] border border-white/[0.08] rounded-3xl p-12 text-center space-y-3">
+            <Bookmark className="w-10 h-10 text-slate-500 mx-auto" />
+            <h3 className="text-base font-semibold text-white">Saved Posts</h3>
+            <p className="text-xs text-slate-400 max-w-sm mx-auto leading-relaxed">
+              Bookmarks you save across FaithVerse will be kept private here for your reflection.
             </p>
           </div>
-        ) : (
-          profilePosts.map((post) => <PostCard key={post.id} post={post} />)
         )}
       </div>
 
-      {/* ============================================================== */}
-      {/* EDIT PROFILE MODAL WITH DEVICE UPLOADER & FAITH PRESETS */}
-      {/* ============================================================== */}
+      {/* ========================================================== */}
+      {/* 1. CONFIRM LOGOUT MODAL (Requested in item 2) */}
+      {/* ========================================================== */}
+      {isLogoutModalOpen && (
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in">
+          <div className="bg-[#11141d] border border-rose-500/30 rounded-3xl p-6 max-w-sm w-full space-y-5 shadow-2xl relative text-center">
+            <div className="w-14 h-14 rounded-2xl bg-rose-500/10 border border-rose-500/30 flex items-center justify-center mx-auto text-rose-400">
+              <LogOut className="w-7 h-7 stroke-[2.2]" />
+            </div>
+
+            <div className="space-y-1.5">
+              <h3 className="text-base font-bold text-white">Log Out of FaithVerse?</h3>
+              <p className="text-xs text-slate-400 leading-relaxed">
+                You will be signed out on this device. You can log back in at any time with your credentials or persona.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-2 gap-2.5 pt-2">
+              <button
+                type="button"
+                onClick={() => setIsLogoutModalOpen(false)}
+                className="py-2.5 px-4 rounded-xl text-xs font-semibold bg-white/[0.06] hover:bg-white/[0.1] text-slate-300 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmLogout}
+                className="py-2.5 px-4 rounded-xl text-xs font-semibold bg-rose-500 hover:bg-rose-600 text-white transition-colors shadow-lg shadow-rose-500/20"
+              >
+                Yes, Sign Out
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================== */}
+      {/* 2. COMPREHENSIVE EDIT PROFILE & SETTINGS MODAL (Item 2) */}
+      {/* ========================================================== */}
       {isEditOpen && (
-        <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-3 sm:p-4">
-          <div className="bg-[#11141d] border border-white/10 max-w-lg w-full rounded-3xl overflow-hidden shadow-2xl space-y-4 animate-fade-in flex flex-col max-h-[92vh]">
+        <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-3 sm:p-5 animate-fade-in overflow-y-auto">
+          <div className="bg-[#11141d] border border-white/15 rounded-3xl max-w-xl w-full shadow-2xl my-8 overflow-hidden">
             {/* Modal Header */}
-            <div className="p-4 sm:p-5 border-b border-white/[0.08] flex items-center justify-between">
-              <div className="flex items-center gap-2.5">
-                <div className="w-7 h-7 rounded-lg bg-[#e5b842]/10 text-[#e5b842] flex items-center justify-center">
-                  <Edit3 className="w-4 h-4" />
-                </div>
-                <div>
-                  <h3 className="text-base font-bold text-white">Edit Your Profile</h3>
-                  <p className="text-[11px] text-slate-400">Personalize your identity and testimony</p>
-                </div>
+            <div className="p-5 border-b border-white/[0.08] flex items-center justify-between bg-white/[0.02]">
+              <div className="flex items-center gap-2">
+                <Settings className="w-5 h-5 text-[#e5b842]" />
+                <h2 className="text-base sm:text-lg font-bold text-white tracking-tight">
+                  Profile & Account Settings
+                </h2>
               </div>
               <button
+                type="button"
                 onClick={() => setIsEditOpen(false)}
-                className="w-8 h-8 rounded-full bg-white/[0.05] hover:bg-white/[0.1] text-slate-400 hover:text-white flex items-center justify-center transition-colors"
+                className="p-1.5 rounded-full hover:bg-white/[0.08] text-slate-400 hover:text-white transition-colors"
               >
-                <X className="w-4 h-4" />
+                <X className="w-5 h-5" />
               </button>
             </div>
 
-            {/* Modal Form Content */}
-            <form onSubmit={handleSaveProfile} className="p-5 space-y-5 overflow-y-auto">
-              {/* Status Alert */}
-              {saveSuccess && (
-                <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/25 text-emerald-300 text-xs flex items-center gap-2">
-                  <Check className="w-4 h-4 stroke-[3]" />
-                  <span>Profile updated successfully! Refreshing...</span>
-                </div>
-              )}
-              {errorMsg && (
-                <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-300 text-xs">
-                  {errorMsg}
-                </div>
-              )}
-
-              {/* 1. Profile Picture (Avatar) Section */}
-              <div className="space-y-2.5">
-                <label className="text-xs font-bold text-white uppercase tracking-wider block">
-                  Profile Picture
-                </label>
-
-                <div className="flex items-center gap-4">
-                  <div className="relative w-20 h-20 rounded-full overflow-hidden border-2 border-[#e5b842] shadow-md flex-shrink-0 bg-black">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={editAvatarUrl || displayAvatar}
-                      alt="Avatar preview"
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
-
-                  <div className="space-y-1.5 flex-1">
-                    <button
-                      type="button"
-                      onClick={() => avatarInputRef.current?.click()}
-                      className="py-2 px-3.5 rounded-xl text-xs font-semibold bg-white text-black hover:bg-slate-200 transition-colors shadow-sm flex items-center gap-2"
-                    >
-                      <Upload className="w-3.5 h-3.5" />
-                      <span>Upload from Device</span>
-                    </button>
-                    <input
-                      ref={avatarInputRef}
-                      type="file"
-                      accept="image/*"
-                      onChange={handleAvatarFile}
-                      className="hidden"
-                    />
-                    <p className="text-[11px] text-slate-400">JPG, PNG, or WEBP up to 5MB</p>
-                  </div>
-                </div>
-
-                {/* Preset Avatars Row */}
-                <div className="pt-1">
-                  <p className="text-[11px] text-slate-400 mb-2">Or choose a spiritual emblem:</p>
-                  <div className="flex items-center gap-2.5 overflow-x-auto pb-1 scrollbar-none">
-                    {PRESET_AVATARS.map((av, idx) => (
-                      <button
-                        key={idx}
-                        type="button"
-                        onClick={() => setEditAvatarUrl(av.url)}
-                        className={`relative w-11 h-11 rounded-full overflow-hidden border-2 transition-all flex-shrink-0 ${
-                          editAvatarUrl === av.url
-                            ? "border-[#e5b842] ring-2 ring-[#e5b842]/40 scale-105"
-                            : "border-white/10 opacity-70 hover:opacity-100"
-                        }`}
-                        title={av.label}
-                      >
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img src={av.url} alt={av.label} className="w-full h-full object-cover" />
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              </div>
-
-              {/* 2. Cover Banner Section */}
-              <div className="space-y-2.5 pt-2 border-t border-white/[0.08]">
-                <label className="text-xs font-bold text-white uppercase tracking-wider block">
-                  Cover Banner
-                </label>
-
-                <div className="h-24 w-full rounded-2xl overflow-hidden relative border border-white/15 bg-black">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={editBannerUrl || displayBanner}
-                    alt="Banner preview"
-                    className="w-full h-full object-cover"
-                  />
+            {/* Modal Settings Navigation Tabs */}
+            <div className="flex items-center gap-1 px-4 pt-3 border-b border-white/[0.08] overflow-x-auto text-xs font-medium scrollbar-none bg-[#0e1017]">
+              {[
+                { key: "profile", label: "Profile Info", icon: User },
+                { key: "media", label: "Avatar & Cover", icon: Camera },
+                { key: "privacy", label: "Privacy & Fellowship", icon: Lock },
+                { key: "notifications", label: "Alerts", icon: Bell },
+                { key: "security", label: "Security", icon: ShieldCheck },
+              ].map((tab) => {
+                const Icon = tab.icon;
+                const isActive = settingsActiveTab === tab.key;
+                return (
                   <button
+                    key={tab.key}
                     type="button"
-                    onClick={() => bannerInputRef.current?.click()}
-                    className="absolute inset-0 bg-black/40 hover:bg-black/60 flex items-center justify-center gap-2 text-white text-xs font-semibold transition-colors"
+                    onClick={() => setSettingsActiveTab(tab.key as any)}
+                    className={`px-3 py-2 rounded-xl flex items-center gap-1.5 whitespace-nowrap transition-all ${
+                      isActive
+                        ? "bg-white text-black font-semibold shadow-sm"
+                        : "text-slate-400 hover:text-white hover:bg-white/[0.04]"
+                    }`}
                   >
-                    <Upload className="w-4 h-4" />
-                    <span>Upload Custom Banner</span>
+                    <Icon className="w-3.5 h-3.5" />
+                    <span>{tab.label}</span>
                   </button>
-                  <input
-                    ref={bannerInputRef}
-                    type="file"
-                    accept="image/*"
-                    onChange={handleBannerFile}
-                    className="hidden"
-                  />
-                </div>
+                );
+              })}
+            </div>
 
-                {/* Preset Banners Row */}
-                <div className="pt-1">
-                  <p className="text-[11px] text-slate-400 mb-2">Or choose a sanctuary backdrop:</p>
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                    {PRESET_BANNERS.map((bn, idx) => (
-                      <button
-                        key={idx}
-                        type="button"
-                        onClick={() => setEditBannerUrl(bn.url)}
-                        className={`relative h-12 rounded-xl overflow-hidden border transition-all ${
-                          editBannerUrl === bn.url
-                            ? "border-[#e5b842] ring-2 ring-[#e5b842]/40"
-                            : "border-white/10 opacity-70 hover:opacity-100"
-                        }`}
-                      >
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img src={bn.url} alt={bn.label} className="w-full h-full object-cover" />
-                        <span className="absolute inset-0 bg-black/40 flex items-center justify-center text-[10px] font-medium text-white px-1 text-center">
-                          {bn.label}
-                        </span>
-                      </button>
-                    ))}
-                  </div>
+            {/* Modal Form Body */}
+            <form onSubmit={handleSaveProfile} className="p-5 sm:p-6 space-y-5 max-h-[72vh] overflow-y-auto">
+              {errorMsg && (
+                <div className="p-3 bg-rose-500/10 border border-rose-500/25 rounded-xl text-xs text-rose-300 flex items-center gap-2">
+                  <AlertTriangle className="w-4 h-4 text-rose-400 flex-shrink-0" />
+                  <span>{errorMsg}</span>
                 </div>
-              </div>
+              )}
 
-              {/* 3. Text Details */}
-              <div className="space-y-3.5 pt-2 border-t border-white/[0.08]">
-                {/* Full Name */}
-                <div>
-                  <label className="text-xs font-semibold text-slate-300 block mb-1">
-                    Full Name
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={editFullName}
-                    onChange={(e) => setEditFullName(e.target.value)}
-                    placeholder="e.g. Darshan M"
-                    className="w-full bg-white/[0.04] border border-white/[0.08] rounded-xl px-4 py-2.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-[#e5b842]/50 transition-colors"
-                  />
+              {saveSuccess && (
+                <div className="p-3 bg-emerald-500/10 border border-emerald-500/25 rounded-xl text-xs text-emerald-300 flex items-center gap-2">
+                  <Check className="w-4 h-4 text-emerald-400 flex-shrink-0" />
+                  <span>All profile and account settings updated and saved to Supabase!</span>
                 </div>
+              )}
 
-                {/* Bio */}
-                <div>
-                  <div className="flex items-center justify-between mb-1">
-                    <label className="text-xs font-semibold text-slate-300">
-                      Bio / Testimony / Favorite Scripture
-                    </label>
-                    <span className="text-[10px] text-slate-500">{editBio.length}/280</span>
-                  </div>
-                  <textarea
-                    rows={3}
-                    maxLength={280}
-                    value={editBio}
-                    onChange={(e) => setEditBio(e.target.value)}
-                    placeholder="Share what God is doing in your life, your church, or your favorite verse..."
-                    className="w-full bg-white/[0.04] border border-white/[0.08] rounded-xl p-3 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-[#e5b842]/50 transition-colors"
-                  />
-                </div>
-
-                {/* Location & Faith Tradition Grid */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {/* ================= TAB 1: PROFILE INFO ================= */}
+              {settingsActiveTab === "profile" && (
+                <div className="space-y-4 animate-fade-in">
                   <div>
                     <label className="text-xs font-semibold text-slate-300 block mb-1">
-                      Location
+                      Full Display Name
                     </label>
                     <input
                       type="text"
-                      value={editLocation}
-                      onChange={(e) => setEditLocation(e.target.value)}
-                      placeholder="e.g. Bengaluru, India"
-                      className="w-full bg-white/[0.04] border border-white/[0.08] rounded-xl px-3.5 py-2.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-[#e5b842]/50 transition-colors"
+                      required
+                      value={editFullName}
+                      onChange={(e) => setEditFullName(e.target.value)}
+                      placeholder="e.g. Darshan M"
+                      className="w-full bg-white/[0.04] border border-white/[0.08] rounded-xl px-3.5 py-2.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-[#e5b842]/50"
                     />
                   </div>
 
                   <div>
+                    <div className="flex items-center justify-between mb-1">
+                      <label className="text-xs font-semibold text-slate-300">
+                        Biography / Ministry Reflection / Favorite Scripture
+                      </label>
+                      <span className="text-[10px] text-slate-500">{editBio.length}/320</span>
+                    </div>
+                    <textarea
+                      rows={3}
+                      maxLength={320}
+                      value={editBio}
+                      onChange={(e) => setEditBio(e.target.value)}
+                      placeholder="Share what God is doing in your life, your home church, or favorite verse..."
+                      className="w-full bg-white/[0.04] border border-white/[0.08] rounded-xl p-3 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-[#e5b842]/50 resize-none leading-relaxed"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="text-xs font-semibold text-slate-300 block mb-1">
+                        Location / Sanctuary
+                      </label>
+                      <input
+                        type="text"
+                        value={editLocation}
+                        onChange={(e) => setEditLocation(e.target.value)}
+                        placeholder="e.g. Bengaluru, India"
+                        className="w-full bg-white/[0.04] border border-white/[0.08] rounded-xl px-3.5 py-2.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-[#e5b842]/50"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="text-xs font-semibold text-slate-300 block mb-1">
+                        Faith Tradition
+                      </label>
+                      <select
+                        value={editReligion}
+                        onChange={(e) => setEditReligion(e.target.value)}
+                        className="w-full bg-[#161a25] border border-white/[0.08] rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-[#e5b842]/50 cursor-pointer"
+                      >
+                        <option value="Christian">Christian</option>
+                        <option value="Christian / Evangelical">Evangelical</option>
+                        <option value="Christian / Catholic">Catholic</option>
+                        <option value="Christian / Protestant">Protestant</option>
+                        <option value="Christian / Pentecostal">Pentecostal</option>
+                        <option value="Christian / Orthodox">Orthodox</option>
+                        <option value="Seeker / Explorer">Seeker / Explorer</option>
+                        <option value="All Faiths Welcome">All Faiths Welcome</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div>
                     <label className="text-xs font-semibold text-slate-300 block mb-1">
-                      Faith / Journey
+                      Website / Ministry Link
+                    </label>
+                    <input
+                      type="text"
+                      value={editWebsite}
+                      onChange={(e) => setEditWebsite(e.target.value)}
+                      placeholder="https://gracefellowship.org or portfolio link"
+                      className="w-full bg-white/[0.04] border border-white/[0.08] rounded-xl px-3.5 py-2.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-[#e5b842]/50"
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* ================= TAB 2: AVATAR & BANNER MEDIA ================= */}
+              {settingsActiveTab === "media" && (
+                <div className="space-y-5 animate-fade-in">
+                  {/* Avatar section */}
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold text-white uppercase tracking-wider block">
+                      Profile Avatar (From Device or Presets)
+                    </label>
+                    <div className="flex items-center gap-4">
+                      <div className="w-20 h-20 rounded-full overflow-hidden border-2 border-[#e5b842] shadow-xl flex-shrink-0 bg-black">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={editAvatarUrl || displayAvatar}
+                          alt="Avatar preview"
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                      <div className="space-y-1.5 flex-1">
+                        <button
+                          type="button"
+                          onClick={() => avatarInputRef.current?.click()}
+                          className="py-2 px-3.5 rounded-xl text-xs font-semibold bg-white/[0.08] hover:bg-white/[0.14] text-white border border-white/10 transition-colors flex items-center gap-2"
+                        >
+                          <Upload className="w-3.5 h-3.5" />
+                          <span>Choose Photo from Device</span>
+                        </button>
+                        <input
+                          ref={avatarInputRef}
+                          type="file"
+                          accept="image/*"
+                          onChange={handleAvatarFile}
+                          className="hidden"
+                        />
+                        <p className="text-[11px] text-slate-400">
+                          Supports JPG, PNG, WEBP from your phone camera roll or PC.
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Preset Avatars */}
+                    <div className="pt-2">
+                      <p className="text-[11px] text-slate-400 mb-1.5">Or choose a spiritual emblem:</p>
+                      <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
+                        {PRESET_AVATARS.map((av, idx) => (
+                          <button
+                            key={idx}
+                            type="button"
+                            onClick={() => setEditAvatarUrl(av.url)}
+                            className={`p-1 rounded-xl border flex flex-col items-center gap-1 transition-all ${
+                              editAvatarUrl === av.url
+                                ? "border-[#e5b842] bg-[#e5b842]/10"
+                                : "border-white/10 hover:border-white/20"
+                            }`}
+                          >
+                            <div className="w-10 h-10 rounded-full overflow-hidden">
+                              {/* eslint-disable-next-line @next/next/no-img-element */}
+                              <img src={av.url} alt={av.label} className="w-full h-full object-cover" />
+                            </div>
+                            <span className="text-[9px] text-slate-300 truncate w-full text-center">
+                              {av.label}
+                            </span>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Banner section */}
+                  <div className="space-y-2 pt-3 border-t border-white/[0.08]">
+                    <label className="text-xs font-bold text-white uppercase tracking-wider block">
+                      Cover Banner (From Device or Presets)
+                    </label>
+                    <div className="h-24 w-full rounded-2xl overflow-hidden relative border border-white/15 bg-black">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={editBannerUrl || displayBanner}
+                        alt="Banner preview"
+                        className="w-full h-full object-cover"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => bannerInputRef.current?.click()}
+                        className="absolute inset-0 bg-black/40 hover:bg-black/60 flex items-center justify-center gap-2 text-white text-xs font-semibold transition-colors"
+                      >
+                        <Upload className="w-4 h-4" />
+                        <span>Upload Custom Banner from Device</span>
+                      </button>
+                      <input
+                        ref={bannerInputRef}
+                        type="file"
+                        accept="image/*"
+                        onChange={handleBannerFile}
+                        className="hidden"
+                      />
+                    </div>
+
+                    <div className="pt-1">
+                      <p className="text-[11px] text-slate-400 mb-1.5">Or choose a sanctuary backdrop:</p>
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                        {PRESET_BANNERS.map((bn, idx) => (
+                          <button
+                            key={idx}
+                            type="button"
+                            onClick={() => setEditBannerUrl(bn.url)}
+                            className={`relative h-12 rounded-xl overflow-hidden border transition-all ${
+                              editBannerUrl === bn.url
+                                ? "border-[#e5b842] ring-2 ring-[#e5b842]/40"
+                                : "border-white/10 opacity-75 hover:opacity-100"
+                            }`}
+                          >
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img src={bn.url} alt={bn.label} className="w-full h-full object-cover" />
+                            <span className="absolute inset-0 bg-black/40 flex items-center justify-center text-[10px] font-medium text-white px-1 text-center">
+                              {bn.label}
+                            </span>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* ================= TAB 3: PRIVACY & FELLOWSHIP ================= */}
+              {settingsActiveTab === "privacy" && (
+                <div className="space-y-4 animate-fade-in">
+                  <div className="p-3.5 bg-white/[0.03] rounded-2xl border border-white/[0.06] space-y-3">
+                    <div className="flex items-center justify-between">
+                      <div className="space-y-0.5">
+                        <span className="text-xs font-semibold text-white block">Private Account</span>
+                        <span className="text-[11px] text-slate-400 block">
+                          When enabled, only your followers can view your published reflections.
+                        </span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setIsPrivate(!isPrivate)}
+                        className={`w-11 h-6 rounded-full transition-colors relative ${
+                          isPrivate ? "bg-[#e5b842]" : "bg-white/20"
+                        }`}
+                      >
+                        <span
+                          className={`w-4 h-4 rounded-full bg-white absolute top-1 transition-transform ${
+                            isPrivate ? "right-1" : "left-1"
+                          }`}
+                        />
+                      </button>
+                    </div>
+
+                    <div className="pt-3 border-t border-white/[0.06] flex items-center justify-between">
+                      <div className="space-y-0.5">
+                        <span className="text-xs font-semibold text-white block">Allow Direct Messages</span>
+                        <span className="text-[11px] text-slate-400 block">
+                          Receive fellowship messages and prayer requests from believers.
+                        </span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setAllowDMs(!allowDMs)}
+                        className={`w-11 h-6 rounded-full transition-colors relative ${
+                          allowDMs ? "bg-[#e5b842]" : "bg-white/20"
+                        }`}
+                      >
+                        <span
+                          className={`w-4 h-4 rounded-full bg-white absolute top-1 transition-transform ${
+                            allowDMs ? "right-1" : "left-1"
+                          }`}
+                        />
+                      </button>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="text-xs font-semibold text-slate-300 block mb-1">
+                      Preferred Scripture Language
                     </label>
                     <select
-                      value={editReligion}
-                      onChange={(e) => setEditReligion(e.target.value)}
-                      className="w-full bg-[#161a25] border border-white/[0.08] rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-[#e5b842]/50 transition-colors"
+                      value={prefLanguage}
+                      onChange={(e) => setPrefLanguage(e.target.value)}
+                      className="w-full bg-[#161a25] border border-white/[0.08] rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-[#e5b842]/50 cursor-pointer"
                     >
-                      <option value="Christian">Christian</option>
-                      <option value="Christian / Evangelical">Evangelical</option>
-                      <option value="Christian / Catholic">Catholic</option>
-                      <option value="Christian / Protestant">Protestant</option>
-                      <option value="Christian / Pentecostal">Pentecostal</option>
-                      <option value="Seeker / Explorer">Seeker / Explorer</option>
-                      <option value="All Faiths Welcome">All Faiths Welcome</option>
-                      <option value="Grace & Fellowship">Grace & Fellowship</option>
+                      <option value="en">English (NIV / ESV)</option>
+                      <option value="kn">Kannada (ಸತ್ಯವೇದ Bible)</option>
+                      <option value="hi">Hindi (पवित्र बाइबल)</option>
                     </select>
                   </div>
                 </div>
-              </div>
+              )}
+
+              {/* ================= TAB 4: NOTIFICATIONS & ALERTS ================= */}
+              {settingsActiveTab === "notifications" && (
+                <div className="space-y-3 animate-fade-in">
+                  <div className="p-3.5 bg-white/[0.03] rounded-2xl border border-white/[0.06] space-y-3">
+                    <div className="flex items-center justify-between">
+                      <div className="space-y-0.5">
+                        <span className="text-xs font-semibold text-white block">Daily Morning Verse</span>
+                        <span className="text-[11px] text-slate-400 block">
+                          Receive daily curated scripture alerts for morning inspiration.
+                        </span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setDailyVerseAlert(!dailyVerseAlert)}
+                        className={`w-11 h-6 rounded-full transition-colors relative ${
+                          dailyVerseAlert ? "bg-[#e5b842]" : "bg-white/20"
+                        }`}
+                      >
+                        <span
+                          className={`w-4 h-4 rounded-full bg-white absolute top-1 transition-transform ${
+                            dailyVerseAlert ? "right-1" : "left-1"
+                          }`}
+                        />
+                      </button>
+                    </div>
+
+                    <div className="pt-3 border-t border-white/[0.06] flex items-center justify-between">
+                      <div className="space-y-0.5">
+                        <span className="text-xs font-semibold text-white block">Prayer Wall Notifications</span>
+                        <span className="text-[11px] text-slate-400 block">
+                          Get notified when someone prays for your petitions.
+                        </span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setPrayerAlerts(!prayerAlerts)}
+                        className={`w-11 h-6 rounded-full transition-colors relative ${
+                          prayerAlerts ? "bg-[#e5b842]" : "bg-white/20"
+                        }`}
+                      >
+                        <span
+                          className={`w-4 h-4 rounded-full bg-white absolute top-1 transition-transform ${
+                            prayerAlerts ? "right-1" : "left-1"
+                          }`}
+                        />
+                      </button>
+                    </div>
+
+                    <div className="pt-3 border-t border-white/[0.06] flex items-center justify-between">
+                      <div className="space-y-0.5">
+                        <span className="text-xs font-semibold text-white block">Email Digest & Updates</span>
+                        <span className="text-[11px] text-slate-400 block">
+                          Receive weekly faith digests and important ministry notices.
+                        </span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setEmailAlerts(!emailAlerts)}
+                        className={`w-11 h-6 rounded-full transition-colors relative ${
+                          emailAlerts ? "bg-[#e5b842]" : "bg-white/20"
+                        }`}
+                      >
+                        <span
+                          className={`w-4 h-4 rounded-full bg-white absolute top-1 transition-transform ${
+                            emailAlerts ? "right-1" : "left-1"
+                          }`}
+                        />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* ================= TAB 5: ACCOUNT & SECURITY ================= */}
+              {settingsActiveTab === "security" && (
+                <div className="space-y-4 animate-fade-in">
+                  <div>
+                    <label className="text-xs font-semibold text-slate-300 block mb-1">
+                      Account Email
+                    </label>
+                    <input
+                      type="email"
+                      value={editEmail}
+                      onChange={(e) => setEditEmail(e.target.value)}
+                      placeholder="your.email@domain.com"
+                      className="w-full bg-white/[0.04] border border-white/[0.08] rounded-xl px-3.5 py-2.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-[#e5b842]/50"
+                    />
+                  </div>
+
+                  <div className="p-3 bg-white/[0.02] border border-white/[0.06] rounded-xl text-xs space-y-1">
+                    <span className="font-semibold text-white">Account Type</span>
+                    <p className="text-slate-400">
+                      Role: <strong className="text-[#e5b842]">{displayRole}</strong> • Verified: {profileData?.isVerified ? "Yes ✓" : "Standard"}
+                    </p>
+                  </div>
+
+                  <div className="space-y-2 pt-2 border-t border-white/[0.06]">
+                    <span className="text-xs font-semibold text-white block">Change Password</span>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      <input
+                        type="password"
+                        value={newPassword}
+                        onChange={(e) => setNewPassword(e.target.value)}
+                        placeholder="New Password (optional)"
+                        className="w-full bg-white/[0.04] border border-white/[0.08] rounded-xl px-3.5 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-[#e5b842]/50"
+                      />
+                      <input
+                        type="password"
+                        value={confirmPassword}
+                        onChange={(e) => setConfirmPassword(e.target.value)}
+                        placeholder="Confirm Password"
+                        className="w-full bg-white/[0.04] border border-white/[0.08] rounded-xl px-3.5 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-[#e5b842]/50"
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
 
               {/* Submit Buttons */}
-              <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-white/[0.08]">
+              <div className="flex items-center justify-end gap-2.5 pt-4 border-t border-white/[0.08]">
                 <button
                   type="button"
                   onClick={() => setIsEditOpen(false)}
@@ -743,7 +1202,7 @@ export default function UserProfilePage() {
                       <span>Saving to Cloud...</span>
                     </>
                   ) : (
-                    <span>Save Profile</span>
+                    <span>Save All Changes</span>
                   )}
                 </button>
               </div>
