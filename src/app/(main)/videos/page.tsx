@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { Tv, Play, CheckCircle2, Clock, Eye, Share2, ThumbsUp, Bell } from "lucide-react";
+import { Tv, Play, CheckCircle2 } from "lucide-react";
 import { formatNumberCompact } from "@/lib/utils";
 
 interface VideoItem {
@@ -76,26 +76,26 @@ export default function LongVideosPage() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       {/* Header */}
-      <div className="glass-card bg-[#0d1527] p-6 rounded-3xl border border-white/10 space-y-2">
-        <div className="flex items-center gap-2 text-xs font-bold text-[#d4af37] tracking-wider uppercase">
-          <Tv className="w-4 h-4 text-[#d4af37]" />
-          <span>FaithVerse Video Channel & Discourses</span>
+      <div className="bg-[#11141d] p-6 rounded-2xl border border-white/[0.08] space-y-2 shadow-sm">
+        <div className="flex items-center gap-2 text-xs font-semibold text-slate-400 uppercase tracking-wider">
+          <Tv className="w-3.5 h-3.5 text-[#e5b842]" />
+          <span>Teachings & Channels</span>
         </div>
-        <h1 className="text-2xl font-black text-white">Sermons, Teachings & Worship</h1>
-        <p className="text-xs text-slate-300 max-w-lg leading-relaxed">
-          YouTube-style curated video library with Bible expositions, concert broadcasts, and topical theological series.
+        <h1 className="text-xl font-bold text-white">Sermons, Teachings & Worship</h1>
+        <p className="text-xs text-slate-400 max-w-lg leading-relaxed">
+          Curated video library with Bible expositions, worship concert broadcasts, and theological series.
         </p>
       </div>
 
       {/* Video Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {SAMPLE_VIDEOS.map((video) => (
           <div
             key={video.id}
             onClick={() => setSelectedVideo(video)}
-            className="glass-card bg-[#0d1527]/80 rounded-2xl overflow-hidden border border-white/10 shadow-lg group cursor-pointer hover:border-[#d4af37]/40 transition-all flex flex-col justify-between"
+            className="bg-[#11141d] rounded-2xl overflow-hidden border border-white/[0.08] shadow-sm group cursor-pointer hover:border-white/[0.16] transition-all flex flex-col justify-between"
           >
             <div>
               {/* Thumbnail */}
@@ -107,21 +107,21 @@ export default function LongVideosPage() {
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                 />
                 <div className="absolute inset-0 bg-black/20 group-hover:bg-black/10 transition-colors flex items-center justify-center">
-                  <div className="w-12 h-12 rounded-full bg-black/70 backdrop-blur-md flex items-center justify-center text-[#d4af37] group-hover:scale-110 transition-transform">
-                    <Play className="w-6 h-6 fill-current ml-0.5" />
+                  <div className="w-10 h-10 rounded-full bg-white/90 backdrop-blur-md flex items-center justify-center text-black group-hover:scale-110 transition-transform shadow-md">
+                    <Play className="w-4 h-4 fill-current ml-0.5" />
                   </div>
                 </div>
                 <span className="absolute bottom-2 right-2 text-[10px] font-mono px-2 py-0.5 rounded bg-black/80 text-white">
                   {video.duration}
                 </span>
-                <span className="absolute top-2 left-2 text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-black/60 text-[#d4af37] border border-[#d4af37]/30">
+                <span className="absolute top-2 left-2 text-[10px] font-medium px-2 py-0.5 rounded-full bg-black/60 text-slate-200 border border-white/[0.1]">
                   {video.category}
                 </span>
               </div>
 
               {/* Video Info */}
               <div className="p-4 space-y-2">
-                <h3 className="text-sm font-bold text-white line-clamp-2 group-hover:text-[#d4af37] transition-colors leading-snug">
+                <h3 className="text-sm font-semibold text-white line-clamp-2 leading-snug">
                   {video.title}
                 </h3>
 
@@ -130,15 +130,15 @@ export default function LongVideosPage() {
                   <img
                     src={video.channelAvatar}
                     alt={video.channelName}
-                    className="w-7 h-7 rounded-full object-cover border border-white/10"
+                    className="w-6 h-6 rounded-full object-cover border border-white/[0.1]"
                   />
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-1">
-                      <span className="text-xs text-slate-300 font-semibold truncate">
+                      <span className="text-xs text-slate-300 font-medium truncate">
                         {video.channelName}
                       </span>
                       {video.isVerified && (
-                        <CheckCircle2 className="w-3.5 h-3.5 text-[#d4af37] fill-[#d4af37]/20 flex-shrink-0" />
+                        <CheckCircle2 className="w-3.5 h-3.5 text-[#e5b842] flex-shrink-0" />
                       )}
                     </div>
                     <span className="text-[10px] text-slate-500">
@@ -154,9 +154,8 @@ export default function LongVideosPage() {
 
       {/* Video Player Modal */}
       {selectedVideo && (
-        <div className="fixed inset-0 z-50 bg-black/90 backdrop-blur-md flex items-center justify-center p-4">
-          <div className="glass-card bg-[#0d1527] border border-white/20 max-w-3xl w-full rounded-3xl overflow-hidden shadow-2xl space-y-4 animate-fade-in max-h-[90vh] overflow-y-auto">
-            {/* Embedded Video */}
+        <div className="fixed inset-0 z-50 bg-black/90 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-[#121620] border border-white/[0.12] max-w-3xl w-full rounded-2xl overflow-hidden shadow-2xl space-y-4 animate-fade-in max-h-[90vh] overflow-y-auto">
             <div className="relative aspect-video w-full bg-black">
               <video
                 src={selectedVideo.videoUrl}
@@ -168,27 +167,26 @@ export default function LongVideosPage() {
             </div>
 
             <div className="p-6 space-y-4">
-              <h2 className="text-lg font-bold text-white">{selectedVideo.title}</h2>
+              <h2 className="text-base font-bold text-white">{selectedVideo.title}</h2>
 
-              {/* Channel and actions bar */}
-              <div className="flex flex-wrap items-center justify-between gap-3 pb-4 border-b border-white/10">
+              <div className="flex flex-wrap items-center justify-between gap-3 pb-4 border-b border-white/[0.08]">
                 <div className="flex items-center gap-3">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={selectedVideo.channelAvatar}
                     alt={selectedVideo.channelName}
-                    className="w-10 h-10 rounded-full object-cover border border-[#d4af37]/50"
+                    className="w-9 h-9 rounded-full object-cover border border-white/[0.1]"
                   />
                   <div>
                     <div className="flex items-center gap-1.5">
-                      <span className="text-sm font-bold text-white">
+                      <span className="text-xs font-semibold text-white">
                         {selectedVideo.channelName}
                       </span>
                       {selectedVideo.isVerified && (
-                        <CheckCircle2 className="w-4 h-4 text-[#d4af37]" />
+                        <CheckCircle2 className="w-3.5 h-3.5 text-[#e5b842]" />
                       )}
                     </div>
-                    <span className="text-xs text-slate-400">
+                    <span className="text-[11px] text-slate-500">
                       {formatNumberCompact(selectedVideo.views)} views
                     </span>
                   </div>
@@ -197,26 +195,25 @@ export default function LongVideosPage() {
                 <div className="flex items-center gap-2">
                   <button
                     onClick={() => toggleSubscribe(selectedVideo.channelName)}
-                    className={`py-2 px-4 rounded-xl text-xs font-bold transition-all shadow ${
+                    className={`py-1.5 px-3.5 rounded-xl text-xs font-semibold transition-colors ${
                       subscribed[selectedVideo.channelName]
-                        ? "bg-white/15 text-slate-300"
-                        : "bg-[#d4af37] text-black hover:bg-amber-400"
+                        ? "bg-white/[0.08] text-slate-300"
+                        : "bg-white text-black hover:bg-slate-200"
                     }`}
                   >
-                    {subscribed[selectedVideo.channelName] ? "Subscribed ✓" : "Subscribe"}
+                    {subscribed[selectedVideo.channelName] ? "Subscribed" : "Subscribe"}
                   </button>
 
                   <button
                     onClick={() => setSelectedVideo(null)}
-                    className="py-2 px-4 rounded-xl text-xs bg-white/5 hover:bg-white/10 text-slate-300"
+                    className="py-1.5 px-3.5 rounded-xl text-xs bg-white/[0.04] hover:bg-white/[0.08] text-slate-300"
                   >
                     Close
                   </button>
                 </div>
               </div>
 
-              {/* Description */}
-              <div className="bg-white/5 p-4 rounded-2xl text-xs text-slate-300 leading-relaxed">
+              <div className="bg-white/[0.02] p-3.5 rounded-xl border border-white/[0.04] text-xs text-slate-300 leading-relaxed">
                 {selectedVideo.description}
               </div>
             </div>

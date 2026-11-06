@@ -25,16 +25,6 @@ export const DEMO_USERS: CurrentUser[] = [
     isVerified: true,
   },
   {
-    id: "mod-demo-id",
-    email: "moderator@faithverse.org",
-    username: "sarah_mod",
-    fullName: "Sarah Jenkins",
-    role: "MODERATOR",
-    avatarUrl: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=400&q=80",
-    bio: "Community Moderator. Ensuring uplifting and respectful conversations.",
-    isVerified: true,
-  },
-  {
     id: "pastor-demo-id",
     email: "pastor.john@gracechurch.org",
     username: "pastor_john",
@@ -42,6 +32,26 @@ export const DEMO_USERS: CurrentUser[] = [
     role: "USER",
     avatarUrl: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=400&q=80",
     bio: "Lead Pastor at Grace Fellowship. Encouraging believers worldwide.",
+    isVerified: true,
+  },
+  {
+    id: "rachel-demo-id",
+    email: "rachel@worshipmusic.org",
+    username: "rachel_worship",
+    fullName: "Rachel Vance",
+    role: "USER",
+    avatarUrl: "https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=400&q=80",
+    bio: "Worship leader & songwriter. Creating music that brings heaven near.",
+    isVerified: true,
+  },
+  {
+    id: "priya-demo-id",
+    email: "priya.grace@gmail.com",
+    username: "priya_grace",
+    fullName: "Priya Sharma",
+    role: "USER",
+    avatarUrl: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=400&q=80",
+    bio: "Living by grace in Bengaluru. Sharing daily joy & reflections.",
     isVerified: true,
   },
   {
@@ -56,11 +66,21 @@ export const DEMO_USERS: CurrentUser[] = [
   },
 ];
 
+interface RegisterPayload {
+  fullName: string;
+  username: string;
+  email: string;
+  password: string;
+  religion?: string;
+}
+
 interface AuthContextType {
   user: CurrentUser | null;
   role: "GUEST" | "USER" | "MODERATOR" | "ADMIN" | "SUPER_ADMIN";
   isAdminOrMod: boolean;
   login: (demoUsername: string) => void;
+  loginWithCredentials: (emailOrUsername: string, password: string) => Promise<{ success: boolean; error?: string }>;
+  registerAccount: (payload: RegisterPayload) => Promise<{ success: boolean; error?: string }>;
   logout: () => void;
   switchUser: (targetUsername: string) => void;
 }
@@ -70,12 +90,14 @@ const AuthContext = createContext<AuthContextType>({
   role: "SUPER_ADMIN",
   isAdminOrMod: true,
   login: () => {},
+  loginWithCredentials: async () => ({ success: false }),
+  registerAccount: async () => ({ success: false }),
   logout: () => {},
   switchUser: () => {},
 });
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<CurrentUser | null>(DEMO_USERS[0]); // default to admin for seamless evaluation
+  const [user, setUser] = useState<CurrentUser | null>(DEMO_USERS[0]);
 
   useEffect(() => {
     const saved = localStorage.getItem("faithverse_active_user");
@@ -84,7 +106,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const parsed = JSON.parse(saved);
         setUser(parsed);
       } catch {
-        // fallback
+        // fallback to default
       }
     }
   }, []);
@@ -106,6 +128,46 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     switchUser(demoUsername);
   };
 
+  // Real database authentication via /api/auth/login
+  const loginWithCredentials = async (emailOrUsername: string, password: string) => {
+    try {
+      const res = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ emailOrUsername, password }),
+      });
+      const data = await res.json();
+      if (data.success && data.user) {
+        setUser(data.user);
+        localStorage.setItem("faithverse_active_user", JSON.stringify(data.user));
+        return { success: true };
+      }
+      return { success: false, error: data.error || "Failed to sign in" };
+    } catch (err: any) {
+      return { success: false, error: err.message || "Network error signing in" };
+    }
+  };
+
+  // Real database user creation via /api/auth/register
+  const registerAccount = async (payload: RegisterPayload) => {
+    try {
+      const res = await fetch("/api/auth/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      const data = await res.json();
+      if (data.success && data.user) {
+        setUser(data.user);
+        localStorage.setItem("faithverse_active_user", JSON.stringify(data.user));
+        return { success: true };
+      }
+      return { success: false, error: data.error || "Failed to create account" };
+    } catch (err: any) {
+      return { success: false, error: err.message || "Network error registering account" };
+    }
+  };
+
   const logout = () => {
     setUser(null);
     localStorage.removeItem("faithverse_active_user");
@@ -115,7 +177,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const isAdminOrMod = role === "ADMIN" || role === "SUPER_ADMIN" || role === "MODERATOR";
 
   return (
-    <AuthContext.Provider value={{ user, role, isAdminOrMod, login, logout, switchUser }}>
+    <AuthContext.Provider
+      value={{
+        user,
+        role,
+        isAdminOrMod,
+        login,
+        loginWithCredentials,
+        registerAccount,
+        logout,
+        switchUser,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );

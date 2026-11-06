@@ -10,7 +10,7 @@ export default function MainAppLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="min-h-screen bg-[#070b14] flex flex-col">
+    <div className="min-h-screen bg-[#090a0f] flex flex-col">
       {/* Mobile Header */}
       <MobileHeader />
 
@@ -19,7 +19,7 @@ export default function MainAppLayout({
         <Sidebar />
 
         {/* Central Content Area */}
-        <main className="flex-1 min-w-0 max-w-2xl w-full border-x border-white/5 min-h-screen px-3 sm:px-6 py-5 pb-24 lg:pb-8">
+        <main className="flex-1 min-w-0 max-w-2xl w-full border-x border-white/[0.08] min-h-screen px-3 sm:px-6 py-5 pb-24 lg:pb-8">
           {children}
         </main>
 

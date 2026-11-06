@@ -1,7 +1,7 @@
 "use client";
 
-import React, { useState } from "react";
-import { Image, ShieldAlert, Send, Sparkles, CheckCircle2 } from "lucide-react";
+import React, { useState, useRef } from "react";
+import { Image as ImageIcon, ShieldCheck, Send, CheckCircle2, X, Loader2, Upload } from "lucide-react";
 import { useAuth } from "@/components/providers/AuthContext";
 import { useLanguage } from "@/components/providers/LanguageContext";
 
@@ -12,12 +12,24 @@ interface CreatePostWidgetProps {
 export default function CreatePostWidget({ onPostCreated }: CreatePostWidgetProps) {
   const { user } = useAuth();
   const { t } = useLanguage();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
   const [content, setContent] = useState("");
   const [category, setCategory] = useState("FAITH_GROWTH");
-  const [mediaUrl, setMediaUrl] = useState("");
-  const [showMediaInput, setShowMediaInput] = useState(false);
+  const [mediaPreview, setMediaPreview] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [submittedMessage, setSubmittedMessage] = useState(false);
+
+  const handleDeviceFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        setMediaPreview(event.target?.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -32,15 +44,14 @@ export default function CreatePostWidget({ onPostCreated }: CreatePostWidgetProp
           authorId: user.id,
           content: content.trim(),
           category,
-          mediaUrls: mediaUrl.trim() ? [mediaUrl.trim()] : [],
+          mediaUrls: mediaPreview ? [mediaPreview] : [],
         }),
       });
 
       const data = await res.json();
       if (data.success) {
         setContent("");
-        setMediaUrl("");
-        setShowMediaInput(false);
+        setMediaPreview(null);
         setSubmittedMessage(true);
         setTimeout(() => setSubmittedMessage(false), 5000);
         if (onPostCreated) onPostCreated();
@@ -56,17 +67,17 @@ export default function CreatePostWidget({ onPostCreated }: CreatePostWidgetProp
   };
 
   const categories = [
-    { value: "FAITH_GROWTH", label: "Faith Growth & Life" },
+    { value: "FAITH_GROWTH", label: "Faith Growth" },
     { value: "BIBLE_TEACHING", label: "Bible Teaching" },
     { value: "WORSHIP_MUSIC", label: "Worship & Gospel" },
-    { value: "TESTIMONY", label: "Christian Testimony" },
+    { value: "TESTIMONY", label: "Testimony" },
     { value: "PRAYER", label: "Prayer Request" },
-    { value: "INSPIRATION", label: "Daily Inspiration" },
-    { value: "COMMUNITY", label: "Community Discussion" },
+    { value: "INSPIRATION", label: "Inspiration" },
+    { value: "COMMUNITY", label: "Community" },
   ];
 
   return (
-    <div className="glass-card bg-[#0d1527]/80 border border-white/10 rounded-2xl p-4 mb-6 shadow-xl">
+    <div className="bg-[#11141d] border border-white/[0.08] rounded-2xl p-4 mb-6 shadow-sm">
       <form onSubmit={handleSubmit} className="space-y-3">
         <div className="flex items-start gap-3">
           {user ? (
@@ -74,87 +85,98 @@ export default function CreatePostWidget({ onPostCreated }: CreatePostWidgetProp
             <img
               src={user.avatarUrl}
               alt={user.fullName}
-              className="w-10 h-10 rounded-full object-cover border border-[#d4af37]/40 flex-shrink-0"
+              className="w-9 h-9 rounded-full object-cover border border-white/[0.1] flex-shrink-0"
             />
           ) : (
-            <div className="w-10 h-10 rounded-full bg-slate-700 flex-shrink-0" />
+            <div className="w-9 h-9 rounded-full bg-slate-800 flex-shrink-0" />
           )}
 
           <div className="flex-1 min-w-0">
             <textarea
-              rows={3}
+              rows={2}
               value={content}
               onChange={(e) => setContent(e.target.value)}
-              placeholder={t.feed.createPrompt}
-              className="w-full bg-white/5 border border-white/10 rounded-xl p-3 text-sm text-white placeholder-slate-400 focus:outline-none focus:border-[#d4af37]/50 resize-none"
+              placeholder="Share an encouraging thought, Bible verse, or testimony..."
+              className="w-full bg-transparent text-sm text-white placeholder-slate-500 focus:outline-none resize-none leading-relaxed"
             />
           </div>
         </div>
 
-        {/* Media URL Input toggle */}
-        {showMediaInput && (
-          <div className="pl-13 animate-fade-in">
-            <input
-              type="url"
-              value={mediaUrl}
-              onChange={(e) => setMediaUrl(e.target.value)}
-              placeholder="Paste photo URL (e.g. Unsplash, Cloudinary)..."
-              className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-[#d4af37]/50"
-            />
+        {/* Selected Media Preview */}
+        {mediaPreview && (
+          <div className="relative rounded-xl overflow-hidden max-h-48 bg-black/40 border border-white/[0.08] inline-block animate-fade-in">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={mediaPreview} alt="Preview" className="h-44 w-auto object-cover rounded-xl" />
+            <button
+              type="button"
+              onClick={() => setMediaPreview(null)}
+              className="absolute top-2 right-2 p-1 rounded-full bg-black/70 hover:bg-black text-white transition-colors"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
           </div>
         )}
 
         {/* Category selector & Action bar */}
-        <div className="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-white/5">
+        <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-white/[0.06]">
           <div className="flex items-center gap-2">
             <select
               value={category}
               onChange={(e) => setCategory(e.target.value)}
-              className="bg-white/5 border border-white/10 text-xs text-slate-300 rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-[#d4af37]/50 cursor-pointer"
+              className="bg-white/[0.04] border border-white/[0.08] text-xs text-slate-300 rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-white/20 cursor-pointer"
             >
               {categories.map((c) => (
-                <option key={c.value} value={c.value} className="bg-[#0d1527] text-white">
+                <option key={c.value} value={c.value} className="bg-[#11141d] text-white">
                   {c.label}
                 </option>
               ))}
             </select>
 
+            {/* Direct Device Upload Button */}
             <button
               type="button"
-              onClick={() => setShowMediaInput(!showMediaInput)}
-              className={`p-2 rounded-lg text-xs flex items-center gap-1.5 transition-colors ${
-                showMediaInput ? "bg-[#d4af37]/20 text-[#f3d478]" : "text-slate-400 hover:text-white hover:bg-white/5"
+              onClick={() => fileInputRef.current?.click()}
+              className={`px-2.5 py-1.5 rounded-lg text-xs flex items-center gap-1.5 transition-colors ${
+                mediaPreview
+                  ? "bg-white/[0.1] text-white"
+                  : "text-slate-400 hover:text-white hover:bg-white/[0.04]"
               }`}
             >
-              <Image className="w-4 h-4" />
-              <span className="hidden sm:inline">Add Photo</span>
+              <ImageIcon className="w-3.5 h-3.5" />
+              <span>{mediaPreview ? "Photo Added" : "Add Photo"}</span>
             </button>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              onChange={handleDeviceFile}
+              className="hidden"
+            />
           </div>
 
-          <button
-            type="submit"
-            disabled={submitting || !content.trim()}
-            className="py-2 px-4 rounded-xl text-xs font-bold bg-gradient-to-r from-[#d4af37] via-[#f59e0b] to-[#8b5cf6] text-black shadow-md hover:scale-105 active:scale-95 disabled:opacity-40 transition-all flex items-center gap-1.5"
-          >
-            <Send className="w-3.5 h-3.5" />
-            <span>{submitting ? "Submitting..." : "Submit for Approval"}</span>
-          </button>
-        </div>
+          <div className="flex items-center gap-3">
+            <span className="text-[11px] text-slate-400 hidden sm:flex items-center gap-1">
+              <ShieldCheck className="w-3.5 h-3.5 text-[#e5b842]" />
+              Requires Admin Approval
+            </span>
 
-        {/* Moderation Workflow Assurance Notice */}
-        <div className="flex items-start gap-2 bg-[#d4af37]/10 border border-[#d4af37]/25 rounded-xl p-2.5 text-[11px] text-[#f3d478] leading-tight">
-          <ShieldAlert className="w-4 h-4 text-[#d4af37] flex-shrink-0 mt-0.5" />
-          <span>
-            <strong>Mandatory Moderation:</strong> All public submissions are held in the moderation queue until verified by administrators, ensuring a safe, uplifting community for everyone.
-          </span>
+            <button
+              type="submit"
+              disabled={submitting || !content.trim()}
+              className="py-1.5 px-4 rounded-xl text-xs font-semibold bg-white text-black hover:bg-slate-200 active:scale-[0.98] disabled:opacity-40 transition-all flex items-center gap-1.5 shadow-sm"
+            >
+              {submitting ? <Loader2 className="w-3 h-3 animate-spin" /> : <Send className="w-3 h-3" />}
+              <span>{submitting ? "Submitting..." : "Submit for Approval"}</span>
+            </button>
+          </div>
         </div>
 
         {/* Success Confirmation Toast */}
         {submittedMessage && (
-          <div className="flex items-center gap-2 bg-emerald-500/20 border border-emerald-500/40 rounded-xl p-3 text-xs text-emerald-300 animate-fade-in">
+          <div className="flex items-center gap-2.5 bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-3 text-xs text-emerald-300 animate-fade-in">
             <CheckCircle2 className="w-4 h-4 text-emerald-400 flex-shrink-0" />
             <span>
-              Your post has entered the Admin Review Queue! Admins can approve it in the Admin Hub.
+              <strong>Submitted for Admin Approval!</strong> Your post is in the moderation queue and will appear publicly on the feed once an admin approves it.
             </span>
           </div>
         )}

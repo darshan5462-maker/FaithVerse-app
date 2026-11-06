@@ -8,10 +8,9 @@ import {
   Volume2,
   VolumeX,
   Play,
-  Pause,
   Music,
   CheckCircle2,
-  Sparkles,
+  Film,
 } from "lucide-react";
 import { useAuth } from "@/components/providers/AuthContext";
 import { formatNumberCompact } from "@/lib/utils";
@@ -57,10 +56,10 @@ export default function ReelsPage() {
 
   return (
     <div className="flex flex-col items-center justify-center min-h-[85vh] py-2">
-      <div className="text-center mb-4">
-        <h1 className="text-xl font-bold text-white flex items-center justify-center gap-2">
-          <Sparkles className="w-5 h-5 text-[#d4af37]" />
-          FaithVerse Reels & Inspiration
+      <div className="text-center mb-4 space-y-1">
+        <h1 className="text-lg font-bold text-white flex items-center justify-center gap-2">
+          <Film className="w-4 h-4 text-[#e5b842]" />
+          Reels & Short Reflections
         </h1>
         <p className="text-xs text-slate-400">
           Uplifting, purpose-filled short videos reviewed for community safety.
@@ -68,11 +67,11 @@ export default function ReelsPage() {
       </div>
 
       {reels.length === 0 ? (
-        <div className="glass-card bg-[#0d1527]/70 p-12 text-center rounded-2xl max-w-sm w-full space-y-3">
-          <p className="text-sm text-slate-300">Loading Reels...</p>
+        <div className="bg-[#11141d] border border-white/[0.08] p-12 text-center rounded-2xl max-w-sm w-full space-y-2">
+          <p className="text-xs text-slate-400">Loading Reels...</p>
         </div>
       ) : (
-        <div className="relative w-full max-w-[380px] h-[680px] rounded-3xl overflow-hidden shadow-2xl border border-white/15 bg-black">
+        <div className="relative w-full max-w-[380px] h-[660px] rounded-2xl overflow-hidden shadow-2xl border border-white/[0.12] bg-black">
           {reels.map((reel, idx) => {
             if (idx !== currentIndex) return null;
             const isLiked = !!likedReels[reel.id];
@@ -99,37 +98,37 @@ export default function ReelsPage() {
                 <div className="absolute top-4 right-4 z-20 flex items-center gap-2">
                   <button
                     onClick={() => setIsMuted(!isMuted)}
-                    className="p-2.5 rounded-full bg-black/50 text-white backdrop-blur-md hover:bg-black/80 transition-colors"
+                    className="p-2 rounded-full bg-black/60 text-white backdrop-blur-md hover:bg-black/80 transition-colors"
                   >
                     {isMuted ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
                   </button>
                 </div>
 
-                {/* Play / Pause Center Indicator on click */}
+                {/* Play Indicator on pause */}
                 {!isPlaying && (
                   <div
                     onClick={() => togglePlay(idx)}
                     className="absolute inset-0 bg-black/30 flex items-center justify-center cursor-pointer z-10"
                   >
-                    <div className="w-16 h-16 rounded-full bg-black/60 flex items-center justify-center text-white">
-                      <Play className="w-8 h-8 ml-1" />
+                    <div className="w-14 h-14 rounded-full bg-black/60 flex items-center justify-center text-white">
+                      <Play className="w-7 h-7 ml-1" />
                     </div>
                   </div>
                 )}
 
                 {/* Right Action Icons Column */}
-                <div className="absolute right-3 bottom-20 z-20 flex flex-col items-center gap-5 text-white">
+                <div className="absolute right-3 bottom-20 z-20 flex flex-col items-center gap-4 text-white">
                   {/* Like Button */}
                   <button
                     onClick={() => handleLike(reel.id)}
                     className="flex flex-col items-center gap-1 group"
                   >
                     <div
-                      className={`w-11 h-11 rounded-full flex items-center justify-center backdrop-blur-md transition-all active:scale-125 ${
-                        isLiked ? "bg-rose-500 text-white" : "bg-black/50 hover:bg-black/70"
+                      className={`w-10 h-10 rounded-full flex items-center justify-center backdrop-blur-md transition-colors ${
+                        isLiked ? "bg-rose-500 text-white" : "bg-black/60 hover:bg-black/80"
                       }`}
                     >
-                      <Heart className={`w-5 h-5 ${isLiked ? "fill-white" : ""}`} />
+                      <Heart className={`w-4 h-4 ${isLiked ? "fill-white" : ""}`} />
                     </div>
                     <span className="text-[11px] font-bold drop-shadow">
                       {formatNumberCompact(displayLikes)}
@@ -138,11 +137,11 @@ export default function ReelsPage() {
 
                   {/* Comment Button */}
                   <button
-                    onClick={() => alert("Comments drawer: 48 community encouraging comments.")}
+                    onClick={() => alert("Comments drawer")}
                     className="flex flex-col items-center gap-1"
                   >
-                    <div className="w-11 h-11 rounded-full bg-black/50 backdrop-blur-md flex items-center justify-center hover:bg-black/70 transition-colors">
-                      <MessageCircle className="w-5 h-5" />
+                    <div className="w-10 h-10 rounded-full bg-black/60 backdrop-blur-md flex items-center justify-center hover:bg-black/80 transition-colors">
+                      <MessageCircle className="w-4 h-4" />
                     </div>
                     <span className="text-[11px] font-bold drop-shadow">48</span>
                   </button>
@@ -151,49 +150,46 @@ export default function ReelsPage() {
                   <button
                     onClick={() => {
                       navigator.clipboard.writeText(window.location.href);
-                      alert("Reel link copied to clipboard!");
+                      alert("Reel link copied!");
                     }}
                     className="flex flex-col items-center gap-1"
                   >
-                    <div className="w-11 h-11 rounded-full bg-black/50 backdrop-blur-md flex items-center justify-center hover:bg-black/70 transition-colors">
-                      <Share2 className="w-5 h-5" />
+                    <div className="w-10 h-10 rounded-full bg-black/60 backdrop-blur-md flex items-center justify-center hover:bg-black/80 transition-colors">
+                      <Share2 className="w-4 h-4" />
                     </div>
                     <span className="text-[11px] font-bold drop-shadow">Share</span>
                   </button>
 
-                  {/* Creator Avatar with Follow */}
-                  <div className="relative mt-2">
+                  {/* Creator Avatar */}
+                  <div className="relative mt-1">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
                       src={reel.author.avatarUrl}
                       alt={reel.author.fullName}
-                      className="w-10 h-10 rounded-full object-cover border-2 border-[#d4af37]"
+                      className="w-9 h-9 rounded-full object-cover border-2 border-white"
                     />
                   </div>
                 </div>
 
                 {/* Bottom Overlay: Creator Info & Title */}
                 <div className="absolute bottom-0 left-0 right-16 p-4 z-20 bg-gradient-to-t from-black/90 via-black/40 to-transparent">
-                  <div className="flex items-center gap-2 mb-1.5">
-                    <span className="text-sm font-bold text-white drop-shadow">
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="text-xs font-bold text-white drop-shadow">
                       @{reel.author.username}
                     </span>
                     {reel.author.isVerified && (
-                      <CheckCircle2 className="w-4 h-4 text-[#d4af37] fill-[#d4af37]/30" />
+                      <CheckCircle2 className="w-3.5 h-3.5 text-[#e5b842]" />
                     )}
-                    <button className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-white/20 text-white hover:bg-white/30 backdrop-blur-sm">
-                      Follow
-                    </button>
                   </div>
 
-                  <p className="text-xs text-slate-100 font-medium leading-relaxed drop-shadow-md line-clamp-2 mb-2">
+                  <p className="text-xs text-slate-100 font-medium leading-relaxed drop-shadow line-clamp-2 mb-2">
                     {reel.title}
                   </p>
 
                   {/* Audio badge */}
-                  <div className="flex items-center gap-2 text-[10px] text-amber-200/90 bg-black/40 backdrop-blur-md px-2.5 py-1 rounded-full w-fit">
-                    <Music className="w-3 h-3 text-[#d4af37]" />
-                    <span className="truncate">Original Audio &bull; {reel.author.fullName}</span>
+                  <div className="flex items-center gap-1.5 text-[10px] text-slate-300 bg-black/40 backdrop-blur-md px-2.5 py-1 rounded-full w-fit">
+                    <Music className="w-3 h-3 text-[#e5b842]" />
+                    <span className="truncate">Audio &bull; {reel.author.fullName}</span>
                   </div>
                 </div>
               </div>

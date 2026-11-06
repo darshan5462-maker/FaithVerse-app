@@ -56,15 +56,15 @@ export default function UserProfilePage() {
   return (
     <div className="space-y-6">
       {/* Profile Header Card */}
-      <div className="glass-card bg-[#0d1527] rounded-3xl overflow-hidden border border-white/10 shadow-xl">
+      <div className="pro-card rounded-2xl overflow-hidden shadow-xl">
         {/* Banner */}
-        <div className="h-36 sm:h-48 w-full bg-gradient-to-r from-[#131e3a] via-[#1a153a] to-[#251f47] relative">
+        <div className="h-32 sm:h-44 w-full bg-gradient-to-r from-slate-900 via-[#141a29] to-slate-900 relative">
           <div className="absolute inset-0 bg-black/20" />
         </div>
 
-        <div className="px-6 pb-6 pt-0 relative">
+        <div className="px-5 sm:px-6 pb-6 pt-0 relative">
           {/* Avatar & Follow Action */}
-          <div className="flex flex-wrap items-end justify-between -mt-16 sm:-mt-20 gap-4 mb-4">
+          <div className="flex flex-wrap items-end justify-between -mt-14 sm:-mt-16 gap-4 mb-4">
             <div className="relative">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
@@ -74,7 +74,7 @@ export default function UserProfilePage() {
                     : "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=400&q=80"
                 }
                 alt={username}
-                className="w-24 sm:w-32 h-24 sm:h-32 rounded-full object-cover border-4 border-[#0d1527] shadow-xl bg-slate-800"
+                className="w-20 sm:w-28 h-20 sm:h-28 rounded-full object-cover border-4 border-[#090a0f] shadow-xl bg-slate-800"
               />
             </div>
 
@@ -82,17 +82,17 @@ export default function UserProfilePage() {
               {!isOwnProfile ? (
                 <button
                   onClick={() => setIsFollowing(!isFollowing)}
-                  className={`py-2 px-5 rounded-xl text-xs font-bold transition-all shadow-md active:scale-95 ${
+                  className={`py-2 px-4 rounded-xl text-xs font-semibold transition-all ${
                     isFollowing
-                      ? "bg-white/10 text-slate-200 border border-white/15"
-                      : "bg-[#d4af37] text-black hover:bg-amber-400"
+                      ? "bg-white/[0.08] text-slate-200 border border-white/[0.12]"
+                      : "bg-white text-black hover:bg-slate-200"
                   }`}
                 >
-                  {isFollowing ? "Following ✓" : "Follow Creator"}
+                  {isFollowing ? "Following ✓" : "Follow"}
                 </button>
               ) : (
-                <button className="py-2 px-4 rounded-xl text-xs font-semibold bg-white/10 hover:bg-white/15 text-white border border-white/10 transition-colors">
-                  Edit Profile Settings
+                <button className="py-2 px-4 rounded-xl text-xs font-semibold bg-white/[0.08] hover:bg-white/[0.12] text-white border border-white/[0.1] transition-colors">
+                  Edit Profile
                 </button>
               )}
             </div>
@@ -102,18 +102,18 @@ export default function UserProfilePage() {
           <div className="space-y-3">
             <div>
               <div className="flex items-center gap-2 flex-wrap">
-                <h1 className="text-xl font-black text-white">
+                <h1 className="text-xl font-bold text-white tracking-tight">
                   {isOwnProfile && currentUser ? currentUser.fullName : username}
                 </h1>
-                <CheckCircle2 className="w-5 h-5 text-[#d4af37] fill-[#d4af37]/20" />
-                <span className="text-xs px-2.5 py-0.5 rounded-full bg-[#d4af37]/15 text-[#f3d478] border border-[#d4af37]/30 font-semibold">
+                <CheckCircle2 className="w-4 h-4 text-[#e5b842] fill-[#e5b842]/20" />
+                <span className="text-[11px] px-2.5 py-0.5 rounded-full bg-[#e5b842]/10 text-[#f5d47a] border border-[#e5b842]/30 font-medium">
                   {isOwnProfile && currentUser ? currentUser.role : "Member"}
                 </span>
               </div>
               <p className="text-xs text-slate-400">@{username}</p>
             </div>
 
-            <p className="text-xs sm:text-sm text-slate-200 max-w-xl leading-relaxed">
+            <p className="text-xs sm:text-sm text-slate-300 max-w-xl leading-relaxed">
               {isOwnProfile && currentUser?.bio
                 ? currentUser.bio
                 : "Dedicated to sharing grace, building authentic faith community, and encouraging believers worldwide."}
@@ -121,21 +121,21 @@ export default function UserProfilePage() {
 
             <div className="flex flex-wrap items-center gap-4 text-xs text-slate-400 pt-1">
               <div className="flex items-center gap-1.5">
-                <MapPin className="w-4 h-4 text-slate-400" />
+                <MapPin className="w-3.5 h-3.5 text-slate-500" />
                 <span>Global Sanctuary</span>
               </div>
               <div className="flex items-center gap-1.5">
-                <Calendar className="w-4 h-4 text-slate-400" />
+                <Calendar className="w-3.5 h-3.5 text-slate-500" />
                 <span>Joined October 2026</span>
               </div>
               <div className="flex items-center gap-1.5">
-                <Globe className="w-4 h-4 text-[#d4af37]" />
-                <span className="text-amber-300">All Faiths Welcome</span>
+                <Globe className="w-3.5 h-3.5 text-[#e5b842]" />
+                <span className="text-slate-300">All Faiths Welcome</span>
               </div>
             </div>
 
             {/* Stats */}
-            <div className="flex items-center gap-6 pt-3 border-t border-white/10 text-xs">
+            <div className="flex items-center gap-6 pt-3 border-t border-white/[0.06] text-xs">
               <div>
                 <strong className="text-white font-bold">{profilePosts.length}</strong>{" "}
                 <span className="text-slate-400">Posts</span>
@@ -154,13 +154,13 @@ export default function UserProfilePage() {
       </div>
 
       {/* Tabs */}
-      <div className="flex items-center gap-2 border-b border-white/10 pb-2 text-xs font-semibold">
+      <div className="flex items-center gap-2 border-b border-white/[0.08] pb-1 text-xs font-semibold">
         <button
           onClick={() => setActiveTab("approved")}
-          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl transition-all ${
+          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-colors ${
             activeTab === "approved"
-              ? "bg-[#d4af37]/20 text-[#f3d478] border border-[#d4af37]/40 shadow-sm"
-              : "text-slate-400 hover:text-white hover:bg-white/5"
+              ? "bg-white/[0.08] text-white"
+              : "text-slate-400 hover:text-white hover:bg-white/[0.03]"
           }`}
         >
           <Grid className="w-3.5 h-3.5" />
@@ -170,10 +170,10 @@ export default function UserProfilePage() {
         {isOwnProfile && (
           <button
             onClick={() => setActiveTab("pending")}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl transition-all ${
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-colors ${
               activeTab === "pending"
-                ? "bg-amber-500/20 text-amber-300 border border-amber-500/40 shadow-sm"
-                : "text-slate-400 hover:text-white hover:bg-white/5"
+                ? "bg-amber-500/10 text-amber-300 border border-amber-500/20"
+                : "text-slate-400 hover:text-white hover:bg-white/[0.03]"
             }`}
           >
             <Clock className="w-3.5 h-3.5" />
@@ -183,10 +183,10 @@ export default function UserProfilePage() {
 
         <button
           onClick={() => setActiveTab("saved")}
-          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl transition-all ${
+          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-colors ${
             activeTab === "saved"
-              ? "bg-[#d4af37]/20 text-[#f3d478] border border-[#d4af37]/40 shadow-sm"
-              : "text-slate-400 hover:text-white hover:bg-white/5"
+              ? "bg-white/[0.08] text-white"
+              : "text-slate-400 hover:text-white hover:bg-white/[0.03]"
           }`}
         >
           <Bookmark className="w-3.5 h-3.5" />
@@ -198,9 +198,9 @@ export default function UserProfilePage() {
       <div className="space-y-4">
         {activeTab === "pending" ? (
           pendingPosts.length === 0 ? (
-            <div className="glass-card bg-[#0d1527]/40 p-12 text-center rounded-2xl border border-white/5 space-y-2">
-              <Shield className="w-8 h-8 text-amber-400 mx-auto" />
-              <h3 className="text-sm font-bold text-white">No Pending Submissions</h3>
+            <div className="pro-card p-12 text-center space-y-2">
+              <Shield className="w-8 h-8 text-amber-400 mx-auto opacity-70" />
+              <h3 className="text-sm font-semibold text-white">No Pending Submissions</h3>
               <p className="text-xs text-slate-400">
                 All your submissions have been reviewed and approved!
               </p>
@@ -209,9 +209,9 @@ export default function UserProfilePage() {
             pendingPosts.map((post) => <PostCard key={post.id} post={post} />)
           )
         ) : profilePosts.length === 0 ? (
-          <div className="glass-card bg-[#0d1527]/40 p-12 text-center rounded-2xl border border-white/5 space-y-2">
-            <Sparkles className="w-8 h-8 text-[#d4af37] mx-auto opacity-70" />
-            <h3 className="text-sm font-bold text-white">No Published Posts</h3>
+          <div className="pro-card p-12 text-center space-y-2">
+            <Sparkles className="w-8 h-8 text-[#e5b842] mx-auto opacity-70" />
+            <h3 className="text-sm font-semibold text-white">No Published Posts</h3>
             <p className="text-xs text-slate-400">
               When posts pass through the moderation approval workflow, they appear here.
             </p>

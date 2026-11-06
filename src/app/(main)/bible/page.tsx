@@ -3,14 +3,11 @@
 import React, { useState, useEffect } from "react";
 import {
   BookOpen,
-  Sparkles,
   HelpCircle,
   CheckCircle,
   XCircle,
   Copy,
   Check,
-  Share2,
-  Calendar,
   Bookmark,
 } from "lucide-react";
 import { useLanguage } from "@/components/providers/LanguageContext";
@@ -73,37 +70,37 @@ export default function BibleLearningPage() {
   };
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       {/* 1. Multilingual Daily Verse Highlight */}
-      <div className="glass-card bg-gradient-to-br from-[#0d1527] via-[#131e3a] to-[#1e1738] p-6 rounded-3xl border border-[#d4af37]/40 shadow-2xl space-y-4">
+      <div className="bg-[#11141d] p-6 rounded-2xl border border-white/[0.08] space-y-4 shadow-sm">
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="flex items-center gap-2 text-xs font-bold text-[#d4af37] tracking-wider uppercase">
-            <BookOpen className="w-4 h-4 text-[#d4af37]" />
-            <span>Today&apos;s Living Word</span>
+          <div className="flex items-center gap-2 text-xs font-semibold text-slate-400 uppercase tracking-wider">
+            <BookOpen className="w-4 h-4 text-[#e5b842]" />
+            <span>Daily Scripture</span>
           </div>
 
           {/* Translation selector */}
-          <div className="flex items-center gap-1 bg-black/40 p-1 rounded-xl border border-white/10 text-xs">
+          <div className="flex items-center gap-1 bg-white/[0.04] p-1 rounded-xl border border-white/[0.08] text-xs">
             <button
               onClick={() => setSelectedLang("en")}
-              className={`px-2.5 py-1 rounded-lg font-medium transition-colors ${
-                selectedLang === "en" ? "bg-[#d4af37] text-black font-bold" : "text-slate-400 hover:text-white"
+              className={`px-3 py-1 rounded-lg text-xs font-medium transition-colors ${
+                selectedLang === "en" ? "bg-white text-black font-semibold shadow-sm" : "text-slate-400 hover:text-white"
               }`}
             >
               English
             </button>
             <button
               onClick={() => setSelectedLang("kn")}
-              className={`px-2.5 py-1 rounded-lg font-medium transition-colors ${
-                selectedLang === "kn" ? "bg-[#d4af37] text-black font-bold" : "text-slate-400 hover:text-white"
+              className={`px-3 py-1 rounded-lg text-xs font-medium transition-colors ${
+                selectedLang === "kn" ? "bg-white text-black font-semibold shadow-sm" : "text-slate-400 hover:text-white"
               }`}
             >
               ಕನ್ನಡ
             </button>
             <button
               onClick={() => setSelectedLang("hi")}
-              className={`px-2.5 py-1 rounded-lg font-medium transition-colors ${
-                selectedLang === "hi" ? "bg-[#d4af37] text-black font-bold" : "text-slate-400 hover:text-white"
+              className={`px-3 py-1 rounded-lg text-xs font-medium transition-colors ${
+                selectedLang === "hi" ? "bg-white text-black font-semibold shadow-sm" : "text-slate-400 hover:text-white"
               }`}
             >
               हिन्दी
@@ -114,30 +111,30 @@ export default function BibleLearningPage() {
         {dailyVerse && (
           <>
             <div className="space-y-2">
-              <span className="text-xs font-bold text-amber-300">
+              <span className="text-xs font-semibold text-[#e5b842]">
                 {dailyVerse.book} {dailyVerse.chapter}:{dailyVerse.verse}
               </span>
-              <p className="text-lg md:text-xl font-medium text-white italic leading-relaxed">
+              <p className="text-base sm:text-lg font-medium text-white italic leading-relaxed">
                 &ldquo;{getVerseText()}&rdquo;
               </p>
             </div>
 
-            <div className="bg-white/5 p-4 rounded-2xl border border-white/5 space-y-1 text-xs text-slate-300">
-              <span className="font-bold text-[#d4af37] block">Spiritual Reflection:</span>
-              <p className="leading-relaxed">{dailyVerse.explanation}</p>
+            <div className="bg-white/[0.02] p-4 rounded-xl border border-white/[0.04] space-y-1 text-xs text-slate-300">
+              <span className="font-semibold text-white block">Reflection:</span>
+              <p className="leading-relaxed text-slate-400">{dailyVerse.explanation}</p>
             </div>
 
-            <div className="flex items-center justify-between pt-2">
-              <span className="text-xs text-slate-400">
-                Theme: <strong>{dailyVerse.theme}</strong>
+            <div className="flex items-center justify-between pt-2 text-xs">
+              <span className="text-slate-400">
+                Theme: <strong className="text-slate-200">{dailyVerse.theme}</strong>
               </span>
 
               <button
                 onClick={handleCopy}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-xs text-slate-200 transition-colors"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] text-slate-200 transition-colors border border-white/[0.06]"
               >
                 {copied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
-                <span>{copied ? "Copied!" : "Copy Scripture Card"}</span>
+                <span>{copied ? "Copied" : "Copy Scripture"}</span>
               </button>
             </div>
           </>
@@ -145,17 +142,17 @@ export default function BibleLearningPage() {
       </div>
 
       {/* 2. Scripture Explorer & Chapter Reader */}
-      <div className="glass-card bg-[#0d1527]/80 p-6 rounded-3xl border border-white/10 space-y-4">
+      <div className="bg-[#11141d] p-6 rounded-2xl border border-white/[0.08] space-y-4 shadow-sm">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2 text-sm font-bold text-white">
-            <Bookmark className="w-4 h-4 text-[#d4af37]" />
-            <span>Scripture Book & Chapter Navigator</span>
+          <div className="flex items-center gap-2 text-sm font-semibold text-white">
+            <Bookmark className="w-4 h-4 text-[#e5b842]" />
+            <span>Scripture Reader</span>
           </div>
-          <span className="text-xs text-slate-400">Old & New Testament</span>
+          <span className="text-xs text-slate-500">Old & New Testament</span>
         </div>
 
         {/* Books List */}
-        <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none text-xs">
+        <div className="flex items-center gap-1.5 overflow-x-auto pb-2 scrollbar-none text-xs">
           {books.map((b) => (
             <button
               key={b.id}
@@ -165,34 +162,34 @@ export default function BibleLearningPage() {
               }}
               className={`px-3 py-1.5 rounded-xl whitespace-nowrap transition-colors ${
                 selectedBook === b.id
-                  ? "bg-gradient-to-r from-[#d4af37] to-amber-500 text-black font-bold shadow-md"
-                  : "bg-white/5 hover:bg-white/10 text-slate-300 border border-white/5"
+                  ? "bg-white text-black font-semibold shadow-sm"
+                  : "bg-white/[0.04] hover:bg-white/[0.08] text-slate-300 border border-white/[0.06]"
               }`}
             >
-              {b.name} ({b.chapters} ch)
+              {b.name} ({b.chapters})
             </button>
           ))}
         </div>
 
         {/* Chapter Text Sample View */}
-        <div className="p-4 rounded-2xl bg-white/[0.02] border border-white/5 space-y-3 text-sm text-slate-200 leading-relaxed font-serif">
-          <h3 className="font-sans font-bold text-base text-amber-300">
+        <div className="p-4 rounded-xl bg-white/[0.02] border border-white/[0.04] space-y-3 text-sm text-slate-200 leading-relaxed font-serif">
+          <h3 className="font-sans font-bold text-sm text-white">
             Philippians Chapter 4 (BSB)
           </h3>
           <p>
-            <sup className="text-amber-400 font-bold mr-1">4</sup>
+            <sup className="text-slate-500 font-bold mr-1">4</sup>
             Rejoice in the Lord always. I will say it again: Rejoice!
           </p>
           <p>
-            <sup className="text-amber-400 font-bold mr-1">5</sup>
+            <sup className="text-slate-500 font-bold mr-1">5</sup>
             Let your gentleness be evident to all. The Lord is near.
           </p>
-          <p className="bg-[#d4af37]/10 p-2 rounded-lg border-l-2 border-[#d4af37]">
-            <sup className="text-amber-400 font-bold mr-1">6</sup>
+          <p className="bg-white/[0.04] p-3 rounded-lg border-l-2 border-[#e5b842]">
+            <sup className="text-[#e5b842] font-bold mr-1">6</sup>
             Do not be anxious about anything, but in every situation, by prayer and petition, with thanksgiving, present your requests to God.
           </p>
           <p>
-            <sup className="text-amber-400 font-bold mr-1">7</sup>
+            <sup className="text-slate-500 font-bold mr-1">7</sup>
             And the peace of God, which transcends all understanding, will guard your hearts and your minds in Christ Jesus.
           </p>
         </div>
@@ -200,13 +197,13 @@ export default function BibleLearningPage() {
 
       {/* 3. Interactive Scripture Quiz */}
       {quizzes.length > 0 && (
-        <div className="glass-card bg-[#0d1527]/90 p-6 rounded-3xl border border-purple-500/30 space-y-4">
+        <div className="bg-[#11141d] p-6 rounded-2xl border border-white/[0.08] space-y-4 shadow-sm">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2 text-xs font-bold text-purple-400 uppercase tracking-wide">
-              <HelpCircle className="w-4 h-4 text-purple-400" />
-              <span>Daily Scripture Quiz Challenge</span>
+            <div className="flex items-center gap-2 text-xs font-semibold text-slate-400 uppercase tracking-wider">
+              <HelpCircle className="w-4 h-4 text-[#e5b842]" />
+              <span>Scripture Quiz Challenge</span>
             </div>
-            <span className="text-xs font-mono px-2.5 py-1 rounded-full bg-purple-500/20 text-purple-300 border border-purple-500/30">
+            <span className="text-xs font-mono px-2.5 py-0.5 rounded-full bg-white/[0.06] text-slate-300 border border-white/[0.08]">
               Score: {score} pts
             </span>
           </div>
@@ -220,12 +217,12 @@ export default function BibleLearningPage() {
               const isCorrect = quizzes[currentQuizIndex]?.correctIndex === idx;
               const isChosen = selectedOption === idx;
 
-              let btnStyle = "bg-white/5 hover:bg-white/10 text-slate-200 border-white/10";
+              let btnStyle = "bg-white/[0.04] hover:bg-white/[0.08] text-slate-200 border-white/[0.08]";
               if (showAnswer) {
                 if (isCorrect) {
-                  btnStyle = "bg-emerald-500/20 text-emerald-300 border-emerald-500/40 font-bold";
+                  btnStyle = "bg-emerald-500/15 text-emerald-300 border-emerald-500/30 font-semibold";
                 } else if (isChosen) {
-                  btnStyle = "bg-rose-500/20 text-rose-300 border-rose-500/40";
+                  btnStyle = "bg-rose-500/15 text-rose-300 border-rose-500/30";
                 }
               }
 
@@ -234,7 +231,7 @@ export default function BibleLearningPage() {
                   key={idx}
                   disabled={showAnswer}
                   onClick={() => handleSelectQuizOption(idx)}
-                  className={`p-3 rounded-xl border text-left flex items-center justify-between transition-all ${btnStyle}`}
+                  className={`p-3 rounded-xl border text-left flex items-center justify-between transition-colors ${btnStyle}`}
                 >
                   <span>{opt}</span>
                   {showAnswer && isCorrect && <CheckCircle className="w-4 h-4 text-emerald-400" />}
@@ -246,14 +243,14 @@ export default function BibleLearningPage() {
 
           {showAnswer && (
             <div className="space-y-3 pt-2 animate-fade-in">
-              <div className="p-3 bg-white/5 rounded-xl border border-white/5 text-xs text-slate-300">
-                <span className="font-semibold text-amber-300">Scripture Reference: </span>
+              <div className="p-3 bg-white/[0.02] rounded-xl border border-white/[0.04] text-xs text-slate-300">
+                <span className="font-semibold text-white">Reference: </span>
                 {quizzes[currentQuizIndex]?.scriptureRef} &mdash; {quizzes[currentQuizIndex]?.explanation}
               </div>
 
               <button
                 onClick={nextQuizQuestion}
-                className="py-2 px-4 rounded-xl text-xs font-bold bg-purple-600 hover:bg-purple-500 text-white shadow transition-colors"
+                className="py-2 px-4 rounded-xl text-xs font-semibold bg-white text-black hover:bg-slate-200 transition-colors shadow-sm"
               >
                 Next Question &rarr;
               </button>

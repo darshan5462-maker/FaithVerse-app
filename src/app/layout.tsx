@@ -18,7 +18,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" data-theme="dark" className="dark">
-      <body className="bg-[#070b14] text-slate-100 antialiased min-h-screen selection:bg-[#d4af37]/30 selection:text-white">
+      <body className="bg-[#090a0f] text-slate-100 antialiased min-h-screen selection:bg-[#e5b842]/20 selection:text-white">
         <LanguageProvider>
           <AuthProvider>
             <AudioPlayerProvider>
