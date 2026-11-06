@@ -18,8 +18,9 @@ export default function AdminLayout({
       <div className="min-h-screen bg-[#07090e] text-slate-100 flex flex-col font-sans">
         <header className="border-b border-white/[0.08] bg-[#0c0f18]/90 backdrop-blur-md px-4 sm:px-8 py-3 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-[#e5b842] flex items-center justify-center text-black font-black text-xs">
-              FV
+            <div className="w-8 h-8 rounded-lg overflow-hidden border border-white/15 shadow-sm flex-shrink-0">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/icon.png" alt="FaithVerse" className="w-full h-full object-cover" />
             </div>
             <span className="font-bold text-white text-sm">FaithVerse</span>
           </Link>

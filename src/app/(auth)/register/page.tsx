@@ -48,9 +48,10 @@ export default function RegisterPage() {
       <div className="pro-card max-w-md w-full p-8 shadow-2xl space-y-6">
         {/* Brand Header */}
         <div className="text-center space-y-2">
-          <Link href="/" className="inline-flex items-center gap-2.5">
-            <div className="w-10 h-10 rounded-xl bg-white/[0.08] border border-white/[0.12] flex items-center justify-center">
-              <span className="text-base font-bold text-[#e5b842]">FV</span>
+          <Link href="/" className="inline-flex items-center gap-3">
+            <div className="w-12 h-12 rounded-2xl overflow-hidden border border-white/15 shadow-lg flex-shrink-0">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/icon.png" alt="FaithVerse" className="w-full h-full object-cover" />
             </div>
             <span className="text-xl font-bold text-white tracking-tight">Join FaithVerse</span>
           </Link>

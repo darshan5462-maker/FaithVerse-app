@@ -18,9 +18,10 @@ export default function MobileHeader() {
 
   return (
     <header className="lg:hidden sticky top-0 left-0 right-0 h-14 bg-[#090a0f]/95 border-b border-white/[0.08] backdrop-blur-xl z-30 px-4 flex items-center justify-between">
-      <Link href="/" className="flex items-center gap-2">
-        <div className="w-7 h-7 rounded-lg bg-[#e5b842] flex items-center justify-center">
-          <span className="text-xs font-black text-black">FV</span>
+      <Link href="/" className="flex items-center gap-2.5">
+        <div className="w-8 h-8 rounded-lg overflow-hidden border border-white/15 shadow-sm flex-shrink-0">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/icon.png" alt="FaithVerse" className="w-full h-full object-cover" />
         </div>
         <span className="font-bold text-white text-base">FaithVerse</span>
       </Link>

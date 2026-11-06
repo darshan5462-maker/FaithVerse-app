@@ -67,8 +67,9 @@ export default function Sidebar() {
     <aside className="hidden lg:flex flex-col w-64 xl:w-72 h-screen sticky top-0 border-r border-white/[0.08] bg-[#090a0f] px-4 py-5 overflow-y-auto select-none z-30">
       {/* Sleek Minimalist Brand Header */}
       <Link href="/" className="flex items-center gap-3 px-2 mb-6 group">
-        <div className="w-9 h-9 rounded-xl bg-[#e5b842] flex items-center justify-center shadow-sm group-hover:scale-105 transition-transform">
-          <span className="text-sm font-black text-black tracking-tight">FV</span>
+        <div className="w-10 h-10 rounded-xl overflow-hidden border border-white/15 shadow-md group-hover:scale-105 transition-transform flex-shrink-0">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/icon.png" alt="FaithVerse Logo" className="w-full h-full object-cover" />
         </div>
         <div>
           <div className="flex items-center gap-1.5">
