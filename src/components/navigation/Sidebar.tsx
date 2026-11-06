@@ -21,16 +21,17 @@ import {
   Globe,
   ChevronDown,
   Check,
+  LogOut,
 } from "lucide-react";
-import { useAuth, DEMO_USERS } from "@/components/providers/AuthContext";
+import { useAuth } from "@/components/providers/AuthContext";
 import { useLanguage } from "@/components/providers/LanguageContext";
 import { SupportedLanguage } from "@/lib/i18n";
 
 export default function Sidebar() {
   const pathname = usePathname();
-  const { user, role, isAdminOrMod, switchUser } = useAuth();
+  const { user, isAdminOrMod, logout } = useAuth();
   const { language, setLanguage, t } = useLanguage();
-  const [showUserDropdown, setShowUserDropdown] = useState(false);
+
   const [showLangDropdown, setShowLangDropdown] = useState(false);
 
   const navItems = [
@@ -47,7 +48,7 @@ export default function Sidebar() {
     { href: "/audio", label: t.nav.audio, icon: Headphones },
   ];
 
-  if (isAdminOrMod) {
+  if (user && isAdminOrMod) {
     navItems.push({
       href: "/admin",
       label: t.nav.admin,
@@ -131,10 +132,7 @@ export default function Sidebar() {
         {/* Language selector */}
         <div className="relative">
           <button
-            onClick={() => {
-              setShowLangDropdown(!showLangDropdown);
-              setShowUserDropdown(false);
-            }}
+            onClick={() => setShowLangDropdown(!showLangDropdown)}
             className="w-full flex items-center justify-between px-3 py-2 text-xs text-slate-400 bg-white/[0.03] hover:bg-white/[0.06] hover:text-white rounded-lg border border-white/[0.06] transition-colors"
           >
             <div className="flex items-center gap-2">
@@ -167,87 +165,54 @@ export default function Sidebar() {
           )}
         </div>
 
-        {/* Demo Persona Switcher */}
-        <div className="relative">
-          <button
-            onClick={() => {
-              setShowUserDropdown(!showUserDropdown);
-              setShowLangDropdown(false);
-            }}
-            className="w-full flex items-center justify-between p-2 rounded-xl bg-white/[0.03] hover:bg-white/[0.06] border border-white/[0.06] transition-colors text-left"
-          >
-            <div className="flex items-center gap-2.5 min-w-0">
-              {user ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={user.avatarUrl}
-                  alt={user.fullName}
-                  className="w-7 h-7 rounded-full object-cover border border-white/[0.12]"
-                />
-              ) : (
-                <div className="w-7 h-7 rounded-full bg-slate-800 flex items-center justify-center">
-                  <User className="w-3.5 h-3.5 text-slate-400" />
-                </div>
-              )}
+        {/* User Account or Sign In */}
+        {user ? (
+          <div className="p-2.5 rounded-xl bg-white/[0.03] border border-white/[0.08] flex items-center justify-between gap-2">
+            <Link
+              href={`/profile/${user.username}`}
+              className="flex items-center gap-2.5 min-w-0 flex-1 hover:opacity-80 transition-opacity"
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={user.avatarUrl}
+                alt={user.fullName}
+                className="w-8 h-8 rounded-full object-cover border border-white/[0.12]"
+              />
               <div className="min-w-0">
-                <p className="text-xs font-semibold text-white truncate">
-                  {user ? user.fullName : "Guest Mode"}
-                </p>
-                <p className="text-[10px] text-slate-400">
-                  Role: <span className="text-[#e5b842]">{role}</span>
-                </p>
+                <p className="text-xs font-semibold text-white truncate">{user.fullName}</p>
+                <p className="text-[10px] text-slate-400 truncate">@{user.username}</p>
               </div>
+            </Link>
+            <button
+              onClick={logout}
+              className="p-1.5 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 transition-colors flex-shrink-0"
+              title="Sign Out"
+            >
+              <LogOut className="w-4 h-4" />
+            </button>
+          </div>
+        ) : (
+          <div className="p-3 rounded-2xl bg-white/[0.03] border border-white/[0.08] space-y-2.5">
+            <div className="space-y-0.5">
+              <p className="text-xs font-semibold text-white">Join the Community</p>
+              <p className="text-[11px] text-slate-400">Share prayers, stories & connect.</p>
             </div>
-            <ChevronDown className="w-3.5 h-3.5 text-slate-500 flex-shrink-0" />
-          </button>
-
-          {showUserDropdown && (
-            <div className="absolute bottom-full left-0 right-0 mb-1 bg-[#121620] border border-white/[0.12] rounded-xl shadow-2xl p-1.5 z-50 animate-fade-in space-y-1">
-              <div className="px-2 py-1 text-[10px] uppercase font-bold text-slate-500 tracking-wider">
-                Select Test Persona
-              </div>
-              {DEMO_USERS.map((u) => (
-                <button
-                  key={u.username}
-                  onClick={() => {
-                    switchUser(u.username);
-                    setShowUserDropdown(false);
-                  }}
-                  className={`w-full flex items-center gap-2 p-1.5 rounded-lg text-left text-xs transition-colors ${
-                    user?.username === u.username
-                      ? "bg-white/[0.08] text-white font-medium"
-                      : "text-slate-400 hover:text-white hover:bg-white/[0.04]"
-                  }`}
-                >
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={u.avatarUrl} alt={u.fullName} className="w-6 h-6 rounded-full object-cover" />
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate font-semibold text-white">{u.fullName}</p>
-                    <p className="text-[10px] text-slate-500">{u.role}</p>
-                  </div>
-                  {user?.username === u.username && <Check className="w-3.5 h-3.5 text-[#e5b842]" />}
-                </button>
-              ))}
-              <button
-                onClick={() => {
-                  switchUser("guest");
-                  setShowUserDropdown(false);
-                }}
-                className={`w-full flex items-center gap-2 p-1.5 rounded-lg text-left text-xs transition-colors ${
-                  role === "GUEST" ? "bg-white/[0.08] text-white" : "text-slate-400 hover:bg-white/[0.04]"
-                }`}
+            <div className="flex flex-col gap-1.5">
+              <Link
+                href="/login"
+                className="w-full py-2 px-3 rounded-xl text-xs font-semibold bg-white text-black text-center hover:bg-slate-200 transition-colors shadow-sm"
               >
-                <div className="w-6 h-6 rounded-full bg-slate-800 flex items-center justify-center">
-                  <User className="w-3.5 h-3.5 text-slate-400" />
-                </div>
-                <div className="flex-1">
-                  <p className="font-medium text-white">Guest Mode</p>
-                  <p className="text-[10px] text-slate-500">Unauthenticated view</p>
-                </div>
-              </button>
+                Sign In
+              </Link>
+              <Link
+                href="/register"
+                className="w-full py-2 px-3 rounded-xl text-xs font-medium text-slate-300 hover:text-white bg-white/[0.04] hover:bg-white/[0.08] text-center border border-white/[0.08] transition-colors"
+              >
+                Create Account
+              </Link>
             </div>
-          )}
-        </div>
+          </div>
+        )}
       </div>
     </aside>
   );

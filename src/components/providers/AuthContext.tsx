@@ -86,9 +86,9 @@ interface AuthContextType {
 }
 
 const AuthContext = createContext<AuthContextType>({
-  user: DEMO_USERS[0],
-  role: "SUPER_ADMIN",
-  isAdminOrMod: true,
+  user: null,
+  role: "GUEST",
+  isAdminOrMod: false,
   login: () => {},
   loginWithCredentials: async () => ({ success: false }),
   registerAccount: async () => ({ success: false }),
@@ -97,7 +97,7 @@ const AuthContext = createContext<AuthContextType>({
 });
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<CurrentUser | null>(DEMO_USERS[0]);
+  const [user, setUser] = useState<CurrentUser | null>(null);
 
   useEffect(() => {
     const saved = localStorage.getItem("faithverse_active_user");
@@ -106,7 +106,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const parsed = JSON.parse(saved);
         setUser(parsed);
       } catch {
-        // fallback to default
+        setUser(null);
       }
     }
   }, []);

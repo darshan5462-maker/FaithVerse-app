@@ -27,8 +27,14 @@ import { useAuth } from "@/components/providers/AuthContext";
 import { formatTimeAgo } from "@/lib/utils";
 
 export default function AdminDashboardPage() {
-  const { user, isAdminOrMod, switchUser } = useAuth();
+  const { user, isAdminOrMod, loginWithCredentials, logout } = useAuth();
   const [activeSection, setActiveSection] = useState<"QUEUE" | "USERS" | "AUDIT">("QUEUE");
+
+  // Confidential Admin Sign-in State
+  const [adminEmail, setAdminEmail] = useState("");
+  const [adminPassword, setAdminPassword] = useState("");
+  const [adminError, setAdminError] = useState("");
+  const [adminAuthLoading, setAdminAuthLoading] = useState(false);
 
   // Moderation Queue State
   const [metrics, setMetrics] = useState<any>(null);
@@ -185,27 +191,127 @@ export default function AdminDashboardPage() {
     }
   };
 
-  // Security gate for non-admins
-  if (!isAdminOrMod) {
+  const handleAdminSignIn = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!adminEmail.trim() || !adminPassword) {
+      setAdminError("Please enter your administrator email/username and password.");
+      return;
+    }
+    setAdminAuthLoading(true);
+    setAdminError("");
+
+    try {
+      const res = await loginWithCredentials(adminEmail.trim(), adminPassword);
+      if (!res.success) {
+        setAdminError(res.error || "Invalid administrator credentials.");
+      }
+    } catch (err: any) {
+      setAdminError(err.message || "An error occurred during authentication.");
+    } finally {
+      setAdminAuthLoading(false);
+    }
+  };
+
+  // If visitor is not logged in: show Confidential Admin Sign In Gate
+  if (!user) {
     return (
-      <div className="min-h-[70vh] flex items-center justify-center p-6">
-        <div className="bg-[#11141d] border border-white/[0.08] p-8 rounded-3xl max-w-md w-full text-center space-y-5 shadow-2xl">
-          <div className="w-14 h-14 rounded-2xl bg-amber-500/10 text-[#e5b842] mx-auto flex items-center justify-center border border-[#e5b842]/20">
-            <Lock className="w-7 h-7" />
-          </div>
-          <div>
-            <h2 className="text-lg font-bold text-white">Administrator Access Required</h2>
-            <p className="text-xs text-slate-400 mt-1 leading-relaxed">
-              This area is strictly restricted to platform moderators and administrators.
+      <div className="min-h-[75vh] flex items-center justify-center p-4">
+        <div className="bg-[#11141d] border border-white/[0.08] p-8 rounded-3xl max-w-md w-full space-y-6 shadow-2xl">
+          <div className="text-center space-y-2">
+            <div className="w-14 h-14 rounded-2xl bg-amber-500/10 text-[#e5b842] mx-auto flex items-center justify-center border border-[#e5b842]/20 shadow-sm">
+              <Lock className="w-7 h-7" />
+            </div>
+            <h2 className="text-xl font-bold text-white tracking-tight">Staff & Administrator Access</h2>
+            <p className="text-xs text-slate-400 leading-relaxed">
+              Confidential internal management system. Authorized staff credentials required to proceed.
             </p>
           </div>
-          <div className="pt-2">
+
+          <form onSubmit={handleAdminSignIn} className="space-y-4">
+            {adminError && (
+              <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-300 text-xs flex items-center gap-2">
+                <AlertTriangle className="w-4 h-4 flex-shrink-0" />
+                <span>{adminError}</span>
+              </div>
+            )}
+
+            <div className="space-y-1.5">
+              <label className="text-xs font-semibold text-slate-300">Admin Email or Username</label>
+              <input
+                type="text"
+                required
+                value={adminEmail}
+                onChange={(e) => setAdminEmail(e.target.value)}
+                placeholder="admin@faithverse.org"
+                className="w-full bg-white/[0.04] border border-white/[0.08] rounded-xl px-3.5 py-2.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-[#e5b842]/50"
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="text-xs font-semibold text-slate-300">Password</label>
+              <input
+                type="password"
+                required
+                value={adminPassword}
+                onChange={(e) => setAdminPassword(e.target.value)}
+                placeholder="••••••••••••"
+                className="w-full bg-white/[0.04] border border-white/[0.08] rounded-xl px-3.5 py-2.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-[#e5b842]/50"
+              />
+            </div>
+
             <button
-              onClick={() => switchUser("faithverse_admin")}
+              type="submit"
+              disabled={adminAuthLoading}
+              className="w-full py-2.5 px-4 rounded-xl text-xs font-semibold bg-white text-black hover:bg-slate-200 transition-colors shadow-sm disabled:opacity-50 flex items-center justify-center gap-2"
+            >
+              {adminAuthLoading ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <span>Verifying clearance...</span>
+                </>
+              ) : (
+                <span>Authenticate & Enter</span>
+              )}
+            </button>
+          </form>
+
+          <div className="pt-2 text-center">
+            <Link href="/" className="text-xs text-slate-500 hover:text-slate-300 transition-colors">
+              &larr; Return to FaithVerse Community
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // If user is logged in but NOT an Admin or Moderator: Access Denied
+  if (!isAdminOrMod) {
+    return (
+      <div className="min-h-[75vh] flex items-center justify-center p-4">
+        <div className="bg-[#11141d] border border-white/[0.08] p-8 rounded-3xl max-w-md w-full text-center space-y-5 shadow-2xl">
+          <div className="w-14 h-14 rounded-2xl bg-rose-500/10 text-rose-400 mx-auto flex items-center justify-center border border-rose-500/20">
+            <Ban className="w-7 h-7" />
+          </div>
+          <div>
+            <h2 className="text-lg font-bold text-white">Administrative Clearance Required</h2>
+            <p className="text-xs text-slate-400 mt-1.5 leading-relaxed">
+              You are currently signed in as <strong className="text-white">@{user.username}</strong> with role <span className="text-[#e5b842]">{user.role}</span>. This portal is strictly restricted to platform administrators.
+            </p>
+          </div>
+          <div className="pt-3 space-y-2">
+            <button
+              onClick={logout}
               className="w-full py-2.5 px-4 rounded-xl text-xs font-semibold bg-white text-black hover:bg-slate-200 transition-colors shadow-sm"
             >
-              Sign In as Super Admin Persona
+              Sign Out & Use Admin Account
             </button>
+            <Link
+              href="/"
+              className="block w-full py-2.5 px-4 rounded-xl text-xs font-medium text-slate-400 hover:text-white bg-white/[0.04] transition-colors"
+            >
+              Return to Community Home
+            </Link>
           </div>
         </div>
       </div>

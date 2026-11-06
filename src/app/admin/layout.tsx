@@ -10,7 +10,33 @@ export default function AdminLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const { user, isAdminOrMod, switchUser } = useAuth();
+  const { user, isAdminOrMod } = useAuth();
+
+  // If not authenticated as Admin, show minimal confidential shell
+  if (!user || !isAdminOrMod) {
+    return (
+      <div className="min-h-screen bg-[#07090e] text-slate-100 flex flex-col font-sans">
+        <header className="border-b border-white/[0.08] bg-[#0c0f18]/90 backdrop-blur-md px-4 sm:px-8 py-3 flex items-center justify-between">
+          <Link href="/" className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-lg bg-[#e5b842] flex items-center justify-center text-black font-black text-xs">
+              FV
+            </div>
+            <span className="font-bold text-white text-sm">FaithVerse</span>
+          </Link>
+          <Link
+            href="/"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium bg-white/[0.04] hover:bg-white/[0.08] text-slate-300 border border-white/[0.08] transition-colors"
+          >
+            <ArrowLeft className="w-3.5 h-3.5" />
+            <span>Return to Community</span>
+          </Link>
+        </header>
+        <main className="flex-1 flex items-center justify-center p-4">
+          {children}
+        </main>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#07090e] text-slate-100 flex flex-col font-sans">

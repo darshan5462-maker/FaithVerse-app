@@ -43,7 +43,7 @@ export default function MobileHeader() {
           <BookOpen className="w-4 h-4" />
         </Link>
 
-        {isAdminOrMod && (
+        {user && isAdminOrMod && (
           <Link
             href="/admin"
             className="p-1.5 rounded-lg bg-white/[0.08] text-[#e5b842] border border-white/[0.12]"
